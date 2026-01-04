@@ -1,0 +1,10 @@
+# Install picamera on pi: sudo apt install python3-picamera2
+# Then create venv with: python3 -m venv venv --system-site-packages
+
+flask>=3.0.0
+gunicorn>=21.2.0
+pyzbar>=0.1.9
+pillow>=10.2.0  # 10.2+ for Python 3.13
+numpy>=1.24.0
+qrcode[pil]>=7.4.2
+python-dotenv>=1.0.0

@@ -1,0 +1,22 @@
+{% if present %}
+<div class="member-grid">
+    {% for member in present %}
+    <div class="member-card">
+        <div class="member-photo">
+            {% if member.profile_picture %}
+            <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+            {% else %}
+            <div class="photo-placeholder">{{ member.name[0] }}</div>
+            {% endif %}
+        </div>
+        <div class="member-name">{{ member.name }}</div>
+        <div class="member-duration">in the erg room for: {{ member.duration_formatted }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Nobody's here yet</p>
+    <p class="hint">Scan your QR code to check in</p>
+</div>
+{% endif %}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who's In the Erg Room?</title>
+    <script src="/static/htmx.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Who's In the Erg Room?</h1>
+        </header>
+
+        <main>
+            <div id="present-list" 
+                 hx-get="/fragment/present-list" 
+                 hx-trigger="every 3s"
+                 hx-swap="innerHTML">
+                {% include '_present_list.html' %}
+            </div>
+        </main>
+
+        <footer>
+            <a href="/login">Sign in to update profile</a>
+        </footer>
+    </div>
+</body>
+</html>
