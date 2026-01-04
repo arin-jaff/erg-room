@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Erg Room</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Admin Panel</h1>
+        </header>
+
+        <main>
+            <h2>All Team Members</h2>
+            <p class="hint">Click a name to simulate a scan (toggle in/out)</p>
+            
+            <div class="admin-list">
+                {% for member in members %}
+                <div class="admin-card {% if member.is_present %}present{% endif %}"
+                     onclick="simulateScan('{{ member.id }}')">
+                    <div class="admin-photo">
+                        {% if member.profile_picture %}
+                        <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+                        {% else %}
+                        <div class="photo-placeholder small">{{ member.name[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="admin-info">
+                        <div class="admin-name">{{ member.name }}</div>
+                        <div class="admin-id">{{ member.id }}</div>
+                    </div>
+                    <div class="admin-status">
+                        {% if member.is_present %}IN{% else %}OUT{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <h2>QR Codes</h2>
+            <p>Located in: <code>qrcodes/</code></p>
+        </main>
+
+        <footer>
+            <a href="/">← Back to erg room</a>
+        </footer>
+    </div>
+
+    <script>
+        async function simulateScan(memberId) {
+            const response = await fetch(`/api/simulate/${memberId}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+    </script>
+</body>
+</html>
