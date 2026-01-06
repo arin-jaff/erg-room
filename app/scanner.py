@@ -1,12 +1,14 @@
 """
 QR Code Scanner Module
 Continuously scans for QR codes and toggles presence status.
+Also provides frame streaming for live video feed.
 """
 
 import time
 import threading
 from datetime import datetime, timedelta
 from collections import defaultdict
+import io
 
 # pyzbar for QR decoding
 from pyzbar import pyzbar
@@ -26,11 +28,22 @@ scanner_thread = None
 # Callback for notifying web clients of changes
 presence_callback = None
 
+# Shared frame for video streaming
+current_frame = None
+frame_lock = threading.Lock()
+
 
 def set_presence_callback(callback):
     """Set callback function to be called when presence changes."""
     global presence_callback
     presence_callback = callback
+
+
+def get_current_frame():
+    """Get the current frame for video streaming."""
+    global current_frame
+    with frame_lock:
+        return current_frame
 
 
 def process_frame(frame: np.ndarray) -> list[str]:
@@ -86,7 +99,7 @@ def handle_scan(qr_data: str) -> dict | None:
 
 def scanner_loop_picamera():
     """Main scanner loop using picamera2 (for Raspberry Pi)."""
-    global scanner_running
+    global scanner_running, current_frame
     
     try:
         from picamera2 import Picamera2
@@ -105,6 +118,10 @@ def scanner_loop_picamera():
         while scanner_running:
             # Capture frame
             frame = picam2.capture_array()
+            
+            # Store frame for video streaming
+            with frame_lock:
+                current_frame = frame.copy()
             
             # Process for QR codes
             qr_codes = process_frame(frame)
@@ -131,15 +148,53 @@ def scanner_loop_picamera():
 
 def scanner_loop_test():
     """Test scanner loop without camera (for development)."""
-    global scanner_running
+    global scanner_running, current_frame
     
     print("Scanner running in TEST MODE (no camera)")
     print("Simulating scans - press Ctrl+C to stop")
+    
+    # Create a placeholder frame for test mode
+    placeholder = np.zeros((FRAME_HEIGHT, FRAME_WIDTH, 3), dtype=np.uint8)
+    placeholder[:] = (240, 240, 240)  # Light gray
+    
+    # Add text to placeholder
+    from PIL import ImageDraw, ImageFont
+    img = Image.fromarray(placeholder)
+    draw = ImageDraw.Draw(img)
+    text = "No Camera"
+    bbox = draw.textbbox((0, 0), text)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    x = (FRAME_WIDTH - text_width) // 2
+    y = (FRAME_HEIGHT - text_height) // 2
+    draw.text((x, y), text, fill=(100, 100, 100))
+    placeholder = np.array(img)
+    
+    with frame_lock:
+        current_frame = placeholder
     
     while scanner_running:
         time.sleep(1)
     
     print("Test scanner stopped")
+
+
+def generate_frames():
+    """Generator function for MJPEG streaming."""
+    while True:
+        frame = get_current_frame()
+        
+        if frame is not None:
+            # Convert numpy array to JPEG
+            img = Image.fromarray(frame)
+            buffer = io.BytesIO()
+            img.save(buffer, format='JPEG', quality=70)
+            frame_bytes = buffer.getvalue()
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        
+        time.sleep(0.1)  # ~10 FPS for streaming
 
 
 def start_scanner(use_camera: bool = True):
