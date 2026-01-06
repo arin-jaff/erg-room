@@ -14,11 +14,20 @@
         </header>
 
         <main>
-            <div id="present-list" 
-                 hx-get="/fragment/present-list" 
-                 hx-trigger="every 3s"
-                 hx-swap="innerHTML">
-                {% include '_present_list.html' %}
+            <div class="camera-feed">
+                <h2>Scanner</h2>
+                <img src="/video_feed" alt="Live camera feed" class="video-stream">
+                <p class="hint">Hold your QR code in front of the camera</p>
+            </div>
+
+            <div class="presence-section">
+                <h2>Currently Here</h2>
+                <div id="present-list" 
+                     hx-get="/fragment/present-list" 
+                     hx-trigger="every 3s"
+                     hx-swap="innerHTML">
+                    {% include '_present_list.html' %}
+                </div>
             </div>
         </main>
 

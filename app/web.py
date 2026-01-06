@@ -3,7 +3,7 @@ Flask Web Application for "Who's In the Erg Room?"
 """
 
 import os
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, Response
 from werkzeug.utils import secure_filename
 from app.config import (
     SECRET_KEY, WEB_HOST, WEB_PORT, UPLOAD_DIR, 
@@ -13,7 +13,7 @@ from app.models import (
     get_present_members, get_all_members, init_db,
     get_member_by_id, update_profile_picture, get_member_presence
 )
-from app.scanner import start_scanner, stop_scanner, simulate_scan, set_presence_callback
+from app.scanner import start_scanner, stop_scanner, simulate_scan, set_presence_callback, generate_frames
 
 app = Flask(__name__, 
             template_folder="../templates",
@@ -40,6 +40,15 @@ def index():
     """Main page showing who's in the erg room."""
     present = get_present_members()
     return render_template("index.html", present=present)
+
+
+@app.route("/video_feed")
+def video_feed():
+    """MJPEG video stream from the camera."""
+    return Response(
+        generate_frames(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
 
 
 @app.route("/api/present")
