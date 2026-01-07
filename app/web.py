@@ -20,7 +20,7 @@ from app.models import (
 from app.rfid_scanner import (
     start_scanner, stop_scanner, simulate_scan, set_presence_callback, 
     get_last_scan_info, set_registration_mode, is_registration_mode,
-    simulate_registration
+    simulate_registration, get_scan_history
 )
 
 app = Flask(__name__, 
@@ -58,7 +58,8 @@ def index():
     """Main page showing who's in the erg room."""
     present = get_present_members()
     last_scan = get_last_scan_info()
-    return render_template("index.html", present=present, last_scan=last_scan)
+    history = get_scan_history()
+    return render_template("index.html", present=present, last_scan=last_scan, scan_history=history)
 
 
 @app.route("/api/present")
@@ -75,6 +76,12 @@ def api_present():
 def api_last_scan():
     """API endpoint returning last scan info."""
     return jsonify(get_last_scan_info())
+
+
+@app.route("/api/scan_history")
+def api_scan_history():
+    """API endpoint returning rolling scan history."""
+    return jsonify(get_scan_history())
 
 
 # ============== User Login Routes ==============

@@ -7,89 +7,179 @@
     <script src="/static/htmx.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        /* Scanner status corner widget */
-        .scanner-widget {
+        /* AOL-style Scanner Chatbox */
+        .scanner-chatbox {
             position: fixed;
             bottom: 1rem;
             right: 1rem;
             z-index: 100;
-            background: var(--card-bg, #2a2a2a);
-            border-radius: 12px;
-            padding: 0.5rem 0.75rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            max-width: 180px;
+            width: 280px;
+            max-height: 350px;
+            display: flex;
+            flex-direction: column;
+            border: 3px ridge #4499D9;
+            background: #FFFFFF;
             font-size: 0.8rem;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.1);
         }
         
-        .scanner-widget:hover {
-            transform: scale(1.05);
-        }
-        
-        .scanner-widget.flash-in {
-            animation: flashIn 0.6s ease;
-            border-color: #4ade80;
-            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
-        }
-        
-        .scanner-widget.flash-out {
-            animation: flashOut 0.6s ease;
-            border-color: #f87171;
-            box-shadow: 0 4px 20px rgba(248, 113, 113, 0.4);
-        }
-        
-        .scanner-widget.flash-registered {
-            animation: flashRegistered 0.6s ease;
-            border-color: #60a5fa;
-            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.4);
-        }
-        
-        @keyframes flashIn {
-            0%, 100% { background: var(--card-bg, #2a2a2a); }
-            50% { background: rgba(74, 222, 128, 0.2); }
-        }
-        
-        @keyframes flashOut {
-            0%, 100% { background: var(--card-bg, #2a2a2a); }
-            50% { background: rgba(248, 113, 113, 0.2); }
-        }
-        
-        @keyframes flashRegistered {
-            0%, 100% { background: var(--card-bg, #2a2a2a); }
-            50% { background: rgba(96, 165, 250, 0.2); }
-        }
-        
-        .scanner-mini {
+        .chatbox-header {
+            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
+            color: #FFFFFF;
+            padding: 0.4rem 0.6rem;
+            font-weight: bold;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            border-bottom: 2px ridge #4499D9;
         }
         
-        .scanner-mini .icon {
-            font-size: 1.2rem;
-            flex-shrink: 0;
+        .chatbox-header .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #0f0;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
         }
         
-        .scanner-mini .info {
-            overflow: hidden;
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
-        .scanner-mini .name {
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .chatbox-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background: #FFFFFF;
+            min-height: 150px;
+            max-height: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
         }
         
-        .scanner-mini .action {
+        .chatbox-log::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        .chatbox-log::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border: 1px inset #ccc;
+        }
+        
+        .chatbox-log::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
+            border: 1px outset #5aaae6;
+        }
+        
+        .chat-message {
+            padding: 0.3rem 0.5rem;
+            border-radius: 0;
+            animation: slideInMessage 0.3s ease;
+            border-left: 3px solid;
+            background: rgba(68, 153, 217, 0.05);
+        }
+        
+        .chat-message.in {
+            border-left-color: #0a0;
+            background: rgba(0, 170, 0, 0.1);
+        }
+        
+        .chat-message.out {
+            border-left-color: #a00;
+            background: rgba(170, 0, 0, 0.1);
+        }
+        
+        .chat-message.registered {
+            border-left-color: #4499D9;
+            background: rgba(68, 153, 217, 0.15);
+        }
+        
+        @keyframes slideInMessage {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .chat-message .timestamp {
+            color: #888;
             font-size: 0.7rem;
-            opacity: 0.7;
+            font-family: 'Courier New', monospace;
         }
         
-        .scanner-mini .action.in { color: #4ade80; opacity: 1; }
-        .scanner-mini .action.out { color: #f87171; opacity: 1; }
-        .scanner-mini .action.registered { color: #60a5fa; opacity: 1; }
+        .chat-message .content {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .chat-message .name {
+            font-weight: bold;
+            color: #4499D9;
+        }
+        
+        .chat-message .action-text {
+            color: #333;
+        }
+        
+        .chat-message.in .action-text {
+            color: #060;
+        }
+        
+        .chat-message.out .action-text {
+            color: #600;
+        }
+        
+        .chat-message .icon {
+            font-size: 1rem;
+        }
+        
+        .chatbox-empty {
+            color: #888;
+            text-align: center;
+            padding: 2rem 1rem;
+            font-style: italic;
+        }
+        
+        .chatbox-input {
+            background: #e8e8e8;
+            padding: 0.4rem 0.6rem;
+            border-top: 2px ridge #4499D9;
+            font-size: 0.75rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        
+        .chatbox-input .scan-icon {
+            font-size: 1.1rem;
+        }
+        
+        /* Flash effects for new messages */
+        .scanner-chatbox.flash-in {
+            animation: chatFlashIn 0.5s ease;
+        }
+        
+        .scanner-chatbox.flash-out {
+            animation: chatFlashOut 0.5s ease;
+        }
+        
+        @keyframes chatFlashIn {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: 0 0 20px rgba(0, 170, 0, 0.6); }
+        }
+        
+        @keyframes chatFlashOut {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: 0 0 20px rgba(170, 0, 0, 0.6); }
+        }
         
         /* Present list updates */
         .member-grid {
@@ -110,6 +200,20 @@
                 transform: translateY(0); 
             }
         }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .scanner-chatbox {
+                width: 240px;
+                bottom: 4rem;
+                right: 0.5rem;
+            }
+            
+            .chatbox-log {
+                min-height: 120px;
+                max-height: 180px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -128,10 +232,31 @@
         </div>
     </section>
 
-    <!-- Corner scanner widget -->
-    <div id="scanner-widget" class="scanner-widget">
-        <div id="scan-status">
-            {% include '_scan_status.html' %}
+    <!-- AOL-style Scanner Chatbox -->
+    <div id="scanner-chatbox" class="scanner-chatbox">
+        <div class="chatbox-header">
+            <span class="status-dot"></span>
+            <span>📡 Scanner Activity</span>
+        </div>
+        <div id="chatbox-log" class="chatbox-log">
+            {% if scan_history %}
+                {% for scan in scan_history %}
+                <div class="chat-message {{ scan.action }}">
+                    <div class="timestamp">{{ scan.timestamp[11:19] }}</div>
+                    <div class="content">
+                        <span class="icon">{% if scan.action == 'in' %}→{% elif scan.action == 'out' %}←{% else %}✨{% endif %}</span>
+                        <span class="name">{{ scan.member_name or 'Unknown' }}</span>
+                        <span class="action-text">{% if scan.action == 'in' %}checked in{% elif scan.action == 'out' %}checked out{% else %}registered{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="chatbox-empty">No activity yet...<br>Tap your tag to check in!</div>
+            {% endif %}
+        </div>
+        <div class="chatbox-input">
+            <span class="scan-icon">🏷️</span>
+            <span>Tap RFID tag to check in/out</span>
         </div>
     </div>
 
@@ -145,25 +270,38 @@
         let lastScanTimestamp = null;
         let pollInterval = 2000; // Check every 2 seconds
         
+        // Format timestamp for display
+        function formatTime(isoTimestamp) {
+            if (!isoTimestamp) return '';
+            return isoTimestamp.substring(11, 19);
+        }
+        
         // Poll for scan updates
         async function checkForScans() {
             try {
-                const response = await fetch('/api/last_scan');
-                const data = await response.json();
+                const response = await fetch('/api/scan_history');
+                const history = await response.json();
                 
-                // Check if this is a new scan
-                if (data.timestamp && data.timestamp !== lastScanTimestamp) {
-                    lastScanTimestamp = data.timestamp;
+                if (history.length > 0) {
+                    const latestTimestamp = history[0].timestamp;
                     
-                    // Update the scanner widget
-                    updateScannerWidget(data);
-                    
-                    // Flash animation based on action
-                    flashScanner(data.action);
-                    
-                    // If it's a check in/out, refresh the present list
-                    if (data.action === 'in' || data.action === 'out') {
-                        refreshPresentList();
+                    // Check if this is a new scan
+                    if (latestTimestamp !== lastScanTimestamp) {
+                        const isNewScan = lastScanTimestamp !== null;
+                        lastScanTimestamp = latestTimestamp;
+                        
+                        // Update the chatbox
+                        updateChatbox(history);
+                        
+                        // Flash animation for new scans
+                        if (isNewScan) {
+                            flashChatbox(history[0].action);
+                            
+                            // Refresh present list if check in/out
+                            if (history[0].action === 'in' || history[0].action === 'out') {
+                                refreshPresentList();
+                            }
+                        }
                     }
                 }
             } catch (error) {
@@ -171,68 +309,57 @@
             }
         }
         
-        // Update the scanner widget content
-        function updateScannerWidget(data) {
-            const scanStatus = document.getElementById('scan-status');
+        // Update the chatbox with history
+        function updateChatbox(history) {
+            const chatLog = document.getElementById('chatbox-log');
             
-            let icon = '📡';
-            let name = 'Waiting...';
-            let actionText = 'Tap to scan';
-            let actionClass = '';
-            
-            if (data.timestamp) {
-                if (data.action === 'registered') {
-                    icon = '✨';
-                    name = 'New Tag!';
-                    actionText = data.tag_id.substring(0, 8) + '...';
-                    actionClass = 'registered';
-                } else if (data.action === 'pending') {
-                    icon = '⏳';
-                    name = 'Pending';
-                    actionText = data.tag_id.substring(0, 8) + '...';
-                } else if (data.member_name) {
-                    icon = data.action === 'in' ? '✓' : '←';
-                    name = data.member_name;
-                    actionText = data.action === 'in' ? 'Checked In' : 'Checked Out';
-                    actionClass = data.action;
-                } else if (data.action === 'unknown') {
-                    icon = '❓';
-                    name = 'Unknown';
-                    actionText = data.tag_id.substring(0, 8) + '...';
-                }
+            if (history.length === 0) {
+                chatLog.innerHTML = '<div class="chatbox-empty">No activity yet...<br>Tap your tag to check in!</div>';
+                return;
             }
             
-            scanStatus.innerHTML = `
-                <div class="scanner-mini">
-                    <span class="icon">${icon}</span>
-                    <div class="info">
-                        <div class="name">${name}</div>
-                        <div class="action ${actionClass}">${actionText}</div>
+            let html = '';
+            for (const scan of history) {
+                const icon = scan.action === 'in' ? '→' : (scan.action === 'out' ? '←' : '✨');
+                const actionText = scan.action === 'in' ? 'checked in' : (scan.action === 'out' ? 'checked out' : 'registered');
+                const name = scan.member_name || 'Unknown';
+                
+                html += `
+                    <div class="chat-message ${scan.action}">
+                        <div class="timestamp">${formatTime(scan.timestamp)}</div>
+                        <div class="content">
+                            <span class="icon">${icon}</span>
+                            <span class="name">${name}</span>
+                            <span class="action-text">${actionText}</span>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
+            
+            chatLog.innerHTML = html;
         }
         
-        // Flash the scanner widget
-        function flashScanner(action) {
-            const widget = document.getElementById('scanner-widget');
+        // Flash the chatbox for new scans
+        function flashChatbox(action) {
+            const chatbox = document.getElementById('scanner-chatbox');
             
             // Remove existing flash classes
-            widget.classList.remove('flash-in', 'flash-out', 'flash-registered');
+            chatbox.classList.remove('flash-in', 'flash-out');
+            
+            // Trigger reflow to restart animation
+            void chatbox.offsetWidth;
             
             // Add appropriate flash class
             if (action === 'in') {
-                widget.classList.add('flash-in');
+                chatbox.classList.add('flash-in');
             } else if (action === 'out') {
-                widget.classList.add('flash-out');
-            } else if (action === 'registered') {
-                widget.classList.add('flash-registered');
+                chatbox.classList.add('flash-out');
             }
             
             // Remove flash class after animation
             setTimeout(() => {
-                widget.classList.remove('flash-in', 'flash-out', 'flash-registered');
-            }, 600);
+                chatbox.classList.remove('flash-in', 'flash-out');
+            }, 500);
         }
         
         // Refresh the present list
