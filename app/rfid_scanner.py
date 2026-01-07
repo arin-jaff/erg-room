@@ -39,6 +39,11 @@ last_scan_info = {
 }
 scan_info_lock = threading.Lock()
 
+# Scan history (rolling log of last 10 scans)
+scan_history = []
+MAX_HISTORY = 10
+history_lock = threading.Lock()
+
 
 def set_presence_callback(callback):
     """Set callback function to be called when presence changes."""
@@ -50,6 +55,21 @@ def get_last_scan_info():
     """Get info about the last scan for display."""
     with scan_info_lock:
         return last_scan_info.copy()
+
+
+def get_scan_history():
+    """Get the rolling history of recent scans."""
+    with history_lock:
+        return list(scan_history)
+
+
+def add_to_history(scan_info: dict):
+    """Add a scan to the rolling history."""
+    global scan_history
+    with history_lock:
+        scan_history.insert(0, scan_info.copy())
+        if len(scan_history) > MAX_HISTORY:
+            scan_history = scan_history[:MAX_HISTORY]
 
 
 def set_registration_mode(enabled: bool):
@@ -105,6 +125,9 @@ def handle_scan(tag_id: str) -> dict | None:
                     "timestamp": now.isoformat(),
                     "is_new_registration": False
                 }
+            
+            # Add to rolling history
+            add_to_history(last_scan_info)
             
             if presence_callback:
                 presence_callback(result)
@@ -291,6 +314,9 @@ def simulate_scan(member_id: str) -> dict | None:
                 "timestamp": datetime.now().isoformat(),
                 "is_new_registration": False
             }
+        
+        # Add to rolling history
+        add_to_history(last_scan_info)
         
         if presence_callback:
             presence_callback(result)
