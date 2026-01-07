@@ -39,7 +39,6 @@
     </form>
 
     <div class="danger">
-        <h2>Danger Zone</h2>
         <form method="POST" action="/admin/member/{{ member.id }}/delete" onsubmit="return confirm('Delete this member?')">
             <button type="submit" class="btn-danger">Delete Member</button>
         </form>
