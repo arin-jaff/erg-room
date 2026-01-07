@@ -1,4 +1,4 @@
-/* Who's In the Erg Room? - Minimal White/Black Theme */
+/* Who's In the Erg Room? - Minimal White/Black Theme (RFID Version) */
 
 * {
     box-sizing: border-box;
@@ -39,15 +39,15 @@ header h1 {
     font-size: 0.95rem;
 }
 
-/* Camera Feed */
-.camera-feed {
+/* Scan Section */
+.scan-section {
     text-align: center;
     margin-bottom: 2rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid #e0e0e0;
 }
 
-.camera-feed h2,
+.scan-section h2,
 .presence-section h2 {
     font-size: 1rem;
     font-weight: 600;
@@ -57,13 +57,68 @@ header h1 {
     color: #666;
 }
 
-.video-stream {
-    max-width: 100%;
-    width: 320px;
-    height: auto;
+/* Scan Status */
+.scan-waiting {
+    padding: 2rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ddd;
+}
+
+.scan-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.scan-message {
+    color: #888;
+    font-size: 1rem;
+}
+
+.scan-result {
+    padding: 1.5rem;
+    border-radius: 8px;
     border: 2px solid #000;
-    border-radius: 4px;
-    background: #f0f0f0;
+    animation: pulse 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.scan-result.scan-in {
+    background: #f0fff0;
+    border-color: #2a2;
+}
+
+.scan-result.scan-out {
+    background: #fff0f0;
+    border-color: #a22;
+}
+
+.scan-result.scan-unknown {
+    background: #fffbf0;
+    border-color: #a82;
+}
+
+.scan-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.scan-action {
+    font-size: 1rem;
+    color: #666;
+}
+
+.scan-in .scan-action {
+    color: #2a2;
+}
+
+.scan-out .scan-action {
+    color: #a22;
 }
 
 .presence-section {
@@ -144,6 +199,7 @@ header h1 {
 .hint {
     font-size: 0.85rem;
     color: #888;
+    margin-top: 0.5rem;
 }
 
 /* Footer */

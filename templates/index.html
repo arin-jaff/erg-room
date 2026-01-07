@@ -14,10 +14,15 @@
         </header>
 
         <main>
-            <div class="camera-feed">
-                <h2>Scanner</h2>
-                <img src="/video_feed" alt="Live camera feed" class="video-stream">
-                <p class="hint">Hold your QR code in front of the camera</p>
+            <div class="scan-section">
+                <h2>RFID Scanner</h2>
+                <div id="scan-status"
+                     hx-get="/fragment/scan-status"
+                     hx-trigger="every 2s"
+                     hx-swap="innerHTML">
+                    {% include '_scan_status.html' %}
+                </div>
+                <p class="hint">Tap your RFID tag on the reader to check in/out</p>
             </div>
 
             <div class="presence-section">

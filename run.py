@@ -51,11 +51,10 @@ def main():
     
     print(f"""
 ╔═══════════════════════════════════════════╗
-║     🚣 Who's In the Erg Room? 🚣          ║
+║     Who's In the Erg Room?                ║
 ╠═══════════════════════════════════════════╣
 ║  Web UI:  http://{WEB_HOST}:{args.port:<5}              ║
 ║  Admin:   http://{WEB_HOST}:{args.port}/admin         ║
-║  Camera:  {"Enabled" if use_camera else "Disabled (test mode)":<20}        ║
 ╚═══════════════════════════════════════════╝
     """)
     
