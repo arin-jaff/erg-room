@@ -39,12 +39,6 @@
         <code>{{ member.id }}</code>
     </p>
 
-    <h2>Update Name</h2>
-    <form method="POST" action="/profile/update">
-        <input type="text" name="name" value="{{ member.name }}" required>
-        <button type="submit">Save</button>
-    </form>
-
     <h2>Update Photo</h2>
     <form method="POST" action="/profile/upload" enctype="multipart/form-data">
         <input type="file" name="photo" accept="image/*" required>
