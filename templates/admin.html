@@ -13,37 +13,100 @@
         </header>
 
         <main>
-            <h2>All Team Members</h2>
-            <p class="hint">Click a name to simulate a scan (toggle in/out)</p>
-            
-            <div class="admin-list">
-                {% for member in members %}
-                <div class="admin-card {% if member.is_present %}present{% endif %}"
-                     onclick="simulateScan('{{ member.id }}')">
-                    <div class="admin-photo">
-                        {% if member.profile_picture %}
-                        <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
-                        {% else %}
-                        <div class="photo-placeholder small">{{ member.name[0] }}</div>
-                        {% endif %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Registration Mode -->
+            <section class="admin-section">
+                <h2>Tag Registration</h2>
+                <div class="registration-controls">
+                    {% if registration_mode %}
+                    <div class="registration-active">
+                        <span class="status-indicator active"></span>
+                        Registration Mode ACTIVE - Tap a tag to register
                     </div>
-                    <div class="admin-info">
-                        <div class="admin-name">{{ member.name }}</div>
-                        <div class="admin-id">{{ member.id }}</div>
-                    </div>
-                    <div class="admin-status">
-                        {% if member.is_present %}IN{% else %}OUT{% endif %}
-                    </div>
+                    <form method="POST" action="/admin/register/stop">
+                        <button type="submit" class="btn-secondary">Stop Registration</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="/admin/register/start">
+                        <button type="submit">Start Registration Mode</button>
+                    </form>
+                    <form method="POST" action="/admin/register/simulate" style="margin-top: 0.5rem;">
+                        <button type="submit" class="btn-secondary">Simulate Registration (Test)</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Pending Tags -->
+            {% if pending %}
+            <section class="admin-section">
+                <h2>Pending Tags ({{ pending|length }})</h2>
+                <p class="hint">Tags that have been registered but not assigned to a user</p>
+                
+                {% for tag in pending %}
+                <div class="pending-card">
+                    <form method="POST" action="/admin/member/create" class="create-member-form">
+                        <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                        <div class="pending-info">
+                            <code>{{ tag.id }}</code>
+                            <span class="pending-date">{{ tag.created_at[:16] }}</span>
+                        </div>
+                        <input type="text" name="name" placeholder="Enter name" required>
+                        <button type="submit">Create Member</button>
+                        <form method="POST" action="/admin/pending/{{ tag.id }}/delete" style="display: inline;">
+                            <button type="submit" class="btn-danger btn-small">×</button>
+                        </form>
+                    </form>
                 </div>
                 {% endfor %}
-            </div>
+            </section>
+            {% endif %}
 
-            <h2>QR Codes</h2>
-            <p>Located in: <code>qrcodes/</code></p>
+            <!-- All Members -->
+            <section class="admin-section">
+                <h2>All Members ({{ members|length }})</h2>
+                <p class="hint">Click a member to toggle presence, or use Edit to modify</p>
+                
+                {% if members %}
+                <div class="admin-list">
+                    {% for member in members %}
+                    <div class="admin-card {% if member.is_present %}present{% endif %}">
+                        <div class="admin-photo" onclick="simulateScan('{{ member.id }}')">
+                            {% if member.profile_picture %}
+                            <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+                            {% else %}
+                            <div class="photo-placeholder small">{{ member.name[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="admin-info" onclick="simulateScan('{{ member.id }}')">
+                            <div class="admin-name">{{ member.name }}</div>
+                            <div class="admin-id">{{ member.id }}</div>
+                        </div>
+                        <div class="admin-status">
+                            {% if member.is_present %}IN{% else %}OUT{% endif %}
+                        </div>
+                        <div class="admin-actions">
+                            <a href="/admin/member/{{ member.id }}/edit" class="btn-small">Edit</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="empty-state">No members yet. Register a tag to get started.</p>
+                {% endif %}
+            </section>
         </main>
 
         <footer>
             <a href="/">← Back to erg room</a>
+            <a href="/admin/logout">Sign out</a>
         </footer>
     </div>
 

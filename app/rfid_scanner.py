@@ -1,6 +1,7 @@
 """
 RFID Scanner Module (RC522)
 Continuously scans for RFID tags and toggles presence status.
+Supports registration mode for writing new UUIDs to tags.
 """
 
 import time
@@ -8,8 +9,11 @@ import threading
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from app.config import SCAN_INTERVAL, DEBOUNCE_SECONDS
-from app.models import toggle_presence, get_member_by_id, auto_checkout_stale
+from app.config import SCAN_INTERVAL, DEBOUNCE_SECONDS, generate_uuid
+from app.models import (
+    toggle_presence, get_member_by_id, auto_checkout_stale,
+    add_pending_tag, is_pending_tag, is_registered_member
+)
 
 # Track last scan time per member for debouncing
 last_scan_times: dict[str, datetime] = defaultdict(lambda: datetime.min)
@@ -21,12 +25,17 @@ scanner_thread = None
 # Callback for notifying web clients of changes
 presence_callback = None
 
+# Registration mode flag
+registration_mode = False
+registration_lock = threading.Lock()
+
 # Last scanned info for display
 last_scan_info = {
     "tag_id": None,
     "member_name": None,
     "action": None,
-    "timestamp": None
+    "timestamp": None,
+    "is_new_registration": False
 }
 scan_info_lock = threading.Lock()
 
@@ -41,6 +50,20 @@ def get_last_scan_info():
     """Get info about the last scan for display."""
     with scan_info_lock:
         return last_scan_info.copy()
+
+
+def set_registration_mode(enabled: bool):
+    """Enable or disable registration mode."""
+    global registration_mode
+    with registration_lock:
+        registration_mode = enabled
+        print(f"Registration mode: {'ENABLED' if enabled else 'DISABLED'}")
+
+
+def is_registration_mode():
+    """Check if registration mode is active."""
+    with registration_lock:
+        return registration_mode
 
 
 def uid_to_string(uid: list) -> str:
@@ -64,38 +87,93 @@ def handle_scan(tag_id: str) -> dict | None:
     # Update last scan time
     last_scan_times[tag_id] = now
     
-    # Verify this is a valid member
+    # Check if this is a registered member
     member = get_member_by_id(tag_id)
-    if not member:
-        print(f"[{now.strftime('%H:%M:%S')}] Unknown RFID tag: {tag_id}")
+    
+    if member:
+        # Known member - toggle presence
+        result = toggle_presence(tag_id)
+        if result:
+            status = "IN" if result["is_present"] else "OUT"
+            print(f"[{now.strftime('%H:%M:%S')}] {result['name']} checked {status}")
+            
+            with scan_info_lock:
+                last_scan_info = {
+                    "tag_id": tag_id,
+                    "member_name": result["name"],
+                    "action": result["action"],
+                    "timestamp": now.isoformat(),
+                    "is_new_registration": False
+                }
+            
+            if presence_callback:
+                presence_callback(result)
+        
+        return result
+    
+    elif is_pending_tag(tag_id):
+        # Tag is pending registration
+        print(f"[{now.strftime('%H:%M:%S')}] Pending tag scanned: {tag_id}")
+        with scan_info_lock:
+            last_scan_info = {
+                "tag_id": tag_id,
+                "member_name": None,
+                "action": "pending",
+                "timestamp": now.isoformat(),
+                "is_new_registration": False
+            }
+        return None
+    
+    else:
+        # Unknown tag
+        print(f"[{now.strftime('%H:%M:%S')}] Unknown tag: {tag_id}")
         with scan_info_lock:
             last_scan_info = {
                 "tag_id": tag_id,
                 "member_name": None,
                 "action": "unknown",
-                "timestamp": now.isoformat()
+                "timestamp": now.isoformat(),
+                "is_new_registration": False
             }
         return None
+
+
+def handle_registration_scan(reader) -> dict | None:
+    """
+    Handle a scan in registration mode - write new UUID to tag.
+    """
+    global last_scan_info
     
-    # Toggle presence
-    result = toggle_presence(tag_id)
-    if result:
-        status = "IN" if result["is_present"] else "OUT"
-        print(f"[{now.strftime('%H:%M:%S')}] {result['name']} checked {status}")
+    now = datetime.now()
+    
+    try:
+        # Generate new UUID
+        new_uuid = generate_uuid()
+        
+        print(f"[{now.strftime('%H:%M:%S')}] Writing UUID to tag: {new_uuid}")
+        
+        # Write UUID to tag
+        reader.write(new_uuid)
+        
+        # Add to pending registrations
+        add_pending_tag(new_uuid)
+        
+        print(f"[{now.strftime('%H:%M:%S')}] Tag registered with UUID: {new_uuid}")
         
         with scan_info_lock:
             last_scan_info = {
-                "tag_id": tag_id,
-                "member_name": result["name"],
-                "action": result["action"],
-                "timestamp": now.isoformat()
+                "tag_id": new_uuid,
+                "member_name": None,
+                "action": "registered",
+                "timestamp": now.isoformat(),
+                "is_new_registration": True
             }
         
-        # Notify callback if set
-        if presence_callback:
-            presence_callback(result)
-    
-    return result
+        return {"tag_id": new_uuid, "action": "registered"}
+        
+    except Exception as e:
+        print(f"[{now.strftime('%H:%M:%S')}] Registration failed: {e}")
+        return None
 
 
 def scanner_loop_rfid():
@@ -115,14 +193,23 @@ def scanner_loop_rfid():
         
         while scanner_running:
             try:
-                # Read RFID tag (non-blocking approach)
-                # SimpleMFRC522.read() is blocking, so we use read_no_block()
-                id, text = reader.read_no_block()
-                
-                if id:
-                    # Convert ID to hex string for consistency
-                    tag_id = format(id, 'x')
-                    handle_scan(tag_id)
+                # Check if we're in registration mode
+                if is_registration_mode():
+                    # Registration mode - write new UUID to tag
+                    print("Waiting for tag to register...")
+                    id, text = reader.read()  # Blocking read
+                    if id:
+                        handle_registration_scan(reader)
+                        # Auto-disable registration mode after one write
+                        set_registration_mode(False)
+                else:
+                    # Normal mode - read tag
+                    id, text = reader.read_no_block()
+                    
+                    if id:
+                        # Use the text content if available, otherwise use UID
+                        tag_id = text.strip() if text and text.strip() else format(id, 'x')
+                        handle_scan(tag_id)
                 
                 # Auto-checkout check every 5 minutes
                 if datetime.now() - last_auto_checkout > timedelta(minutes=5):
@@ -154,7 +241,6 @@ def scanner_loop_test():
     print("Use /admin to simulate scans")
     
     while scanner_running:
-        # Auto-checkout check every 5 minutes
         time.sleep(60)
         stale_count = auto_checkout_stale()
         if stale_count:
@@ -188,10 +274,7 @@ def stop_scanner():
 
 
 def simulate_scan(member_id: str) -> dict | None:
-    """
-    Manually simulate a scan (for testing/admin).
-    Bypasses debounce.
-    """
+    """Manually simulate a scan (for testing/admin)."""
     member = get_member_by_id(member_id)
     if not member:
         return None
@@ -205,7 +288,8 @@ def simulate_scan(member_id: str) -> dict | None:
                 "tag_id": member_id,
                 "member_name": result["name"],
                 "action": result["action"],
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "is_new_registration": False
             }
         
         if presence_callback:
@@ -214,8 +298,29 @@ def simulate_scan(member_id: str) -> dict | None:
     return result
 
 
+def simulate_registration() -> dict | None:
+    """Simulate tag registration in test mode."""
+    new_uuid = generate_uuid()
+    add_pending_tag(new_uuid)
+    
+    now = datetime.now()
+    
+    with scan_info_lock:
+        global last_scan_info
+        last_scan_info = {
+            "tag_id": new_uuid,
+            "member_name": None,
+            "action": "registered",
+            "timestamp": now.isoformat(),
+            "is_new_registration": True
+        }
+    
+    print(f"[{now.strftime('%H:%M:%S')}] Simulated registration: {new_uuid}")
+    
+    return {"tag_id": new_uuid, "action": "registered"}
+
+
 if __name__ == "__main__":
-    # Test the scanner standalone
     from app.models import init_db
     init_db()
     

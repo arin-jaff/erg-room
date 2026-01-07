@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import hashlib
+import time
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,27 +22,25 @@ WEB_HOST = "0.0.0.0"         # Accessible from network
 WEB_PORT = 5000
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
 
+# Admin password (change this!)
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "REDACTED_PASSWORD")
+
 # Upload settings
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB max upload
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-# Team members - edit this list!
-# Format: {"id": "unique_code", "name": "Display Name"}
-# The "id" should match what's written to the RFID tag
-TEAM_MEMBERS = [
-    {"id": "rower001", "name": "Arin"},
-    {"id": "rower002", "name": "Teammate 2"},
-    {"id": "rower003", "name": "Teammate 3"},
-    {"id": "rower004", "name": "Teammate 4"},
-    {"id": "rower005", "name": "Teammate 5"},
-    {"id": "rower006", "name": "Teammate 6"},
-    {"id": "rower007", "name": "Teammate 7"},
-    {"id": "rower008", "name": "Teammate 8"},
-    # Add more as needed...
-]
-
 # Auto-checkout: mark people as "out" after X hours of no activity
 AUTO_CHECKOUT_HOURS = 5
+
+
+def generate_uuid() -> str:
+    """Generate a unique ID using timestamp and hash (no external modules)."""
+    # Combine timestamp with some randomness from memory address
+    seed = f"{time.time_ns()}-{id(object())}-{os.getpid()}"
+    hash_hex = hashlib.sha256(seed.encode()).hexdigest()
+    # Return first 12 chars for a readable UUID
+    return hash_hex[:12]
+
 
 # RFID RC522 GPIO pins (directly connected to Pi, these are default pins)
 # SDA  -> GPIO 8  (CE0)
