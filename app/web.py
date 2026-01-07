@@ -1,19 +1,27 @@
 """
 Flask Web Application for "Who's In the Erg Room?"
-RFID Version - Uses RC522 RFID reader instead of camera/QR codes
+RFID Version with registration mode and admin panel
 """
 
 import os
+from functools import wraps
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
+from werkzeug.utils import secure_filename
 from app.config import (
     SECRET_KEY, WEB_HOST, WEB_PORT, UPLOAD_DIR, 
-    MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS
+    MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS, ADMIN_PASSWORD
 )
 from app.models import (
     get_present_members, get_all_members, init_db,
-    get_member_by_id, update_profile_picture, get_member_presence
+    get_member_by_id, update_profile_picture, get_member_presence,
+    get_pending_tags, create_member, delete_member, update_member,
+    update_member_uuid, remove_pending_tag
 )
-from app.rfid_scanner import start_scanner, stop_scanner, simulate_scan, set_presence_callback, get_last_scan_info
+from app.rfid_scanner import (
+    start_scanner, stop_scanner, simulate_scan, set_presence_callback, 
+    get_last_scan_info, set_registration_mode, is_registration_mode,
+    simulate_registration
+)
 
 app = Flask(__name__, 
             template_folder="../templates",
@@ -28,9 +36,19 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def admin_required(f):
+    """Decorator to require admin login."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("is_admin"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def notify_clients(data: dict):
     """Notify all connected SSE clients of a presence change."""
-    pass  # Implemented via polling for simplicity
+    pass
 
 
 # ============== Public Routes ==============
@@ -59,11 +77,11 @@ def api_last_scan():
     return jsonify(get_last_scan_info())
 
 
-# ============== Login Routes ==============
+# ============== User Login Routes ==============
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Login page - enter RFID tag ID to access profile."""
+    """Login page - enter tag ID to access profile."""
     if request.method == "POST":
         member_id = request.form.get("member_id", "").strip()
         
@@ -80,25 +98,45 @@ def login():
 
 @app.route("/logout")
 def logout():
-    """Log out and clear session."""
-    session.clear()
+    """Log out user (keep admin session if exists)."""
+    session.pop("member_id", None)
+    session.pop("member_name", None)
     return redirect(url_for("index"))
 
 
-# ============== Profile Routes ==============
+# ============== User Profile Routes ==============
 
 @app.route("/profile")
 def profile():
-    """User profile page."""
+    """User profile page - can edit name and picture, not UUID."""
     if "member_id" not in session:
         return redirect(url_for("login"))
     
     member = get_member_presence(session["member_id"])
     if not member:
-        session.clear()
+        session.pop("member_id", None)
+        session.pop("member_name", None)
         return redirect(url_for("login"))
     
     return render_template("profile.html", member=member)
+
+
+@app.route("/profile/update", methods=["POST"])
+def update_profile():
+    """Handle profile updates (name only, not UUID)."""
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+    
+    name = request.form.get("name", "").strip()
+    
+    if name:
+        update_member(session["member_id"], name=name)
+        session["member_name"] = name
+        flash("Name updated!", "success")
+    else:
+        flash("Name cannot be empty", "error")
+    
+    return redirect(url_for("profile"))
 
 
 @app.route("/profile/upload", methods=["POST"])
@@ -118,21 +156,17 @@ def upload_photo():
         return redirect(url_for("profile"))
     
     if file and allowed_file(file.filename):
-        # Create unique filename using member ID
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = f"{session['member_id']}.{ext}"
         
-        # Remove old profile pictures with different extensions
         for old_ext in ALLOWED_EXTENSIONS:
             old_file = UPLOAD_DIR / f"{session['member_id']}.{old_ext}"
             if old_file.exists() and old_ext != ext:
                 old_file.unlink()
         
-        # Save new file
         filepath = UPLOAD_DIR / filename
         file.save(filepath)
         
-        # Update database
         update_profile_picture(session["member_id"], filename)
         
         flash("Profile picture updated!", "success")
@@ -144,23 +178,142 @@ def upload_photo():
 
 # ============== Admin Routes ==============
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Admin login page."""
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        
+        if password == ADMIN_PASSWORD:
+            session["is_admin"] = True
+            return redirect(url_for("admin"))
+        else:
+            flash("Invalid password", "error")
+    
+    return render_template("admin_login.html")
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    """Log out admin."""
+    session.pop("is_admin", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/admin")
+@admin_required
 def admin():
-    """Admin page for testing and managing."""
+    """Admin dashboard."""
     members = get_all_members()
-    return render_template("admin.html", members=members)
+    pending = get_pending_tags()
+    reg_mode = is_registration_mode()
+    return render_template("admin.html", members=members, pending=pending, registration_mode=reg_mode)
 
 
-@app.route("/api/all")
-def api_all():
-    """API endpoint returning all members with status."""
-    members = get_all_members()
-    return jsonify({"members": members})
+@app.route("/admin/register/start", methods=["POST"])
+@admin_required
+def admin_start_registration():
+    """Start registration mode."""
+    set_registration_mode(True)
+    flash("Registration mode enabled. Tap a tag to register it.", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/register/stop", methods=["POST"])
+@admin_required
+def admin_stop_registration():
+    """Stop registration mode."""
+    set_registration_mode(False)
+    flash("Registration mode disabled.", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/register/simulate", methods=["POST"])
+@admin_required
+def admin_simulate_registration():
+    """Simulate tag registration (test mode)."""
+    result = simulate_registration()
+    if result:
+        flash(f"Simulated tag registered: {result['tag_id']}", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/member/create", methods=["POST"])
+@admin_required
+def admin_create_member():
+    """Create a new member from a pending tag."""
+    tag_id = request.form.get("tag_id", "").strip()
+    name = request.form.get("name", "").strip()
+    
+    if not tag_id or not name:
+        flash("Tag ID and name are required", "error")
+        return redirect(url_for("admin"))
+    
+    if create_member(tag_id, name):
+        flash(f"Member '{name}' created successfully!", "success")
+    else:
+        flash("Failed to create member. Tag may already be registered.", "error")
+    
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/member/<member_id>/edit", methods=["GET", "POST"])
+@admin_required
+def admin_edit_member(member_id):
+    """Edit a member's details including UUID."""
+    member = get_member_presence(member_id)
+    if not member:
+        flash("Member not found", "error")
+        return redirect(url_for("admin"))
+    
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        new_uuid = request.form.get("uuid", "").strip()
+        
+        if name:
+            update_member(member_id, name=name)
+        
+        if new_uuid and new_uuid != member_id:
+            if update_member_uuid(member_id, new_uuid):
+                flash(f"UUID updated to {new_uuid}", "success")
+                return redirect(url_for("admin_edit_member", member_id=new_uuid))
+            else:
+                flash("Failed to update UUID. It may already be in use.", "error")
+        
+        flash("Member updated!", "success")
+        return redirect(url_for("admin"))
+    
+    return render_template("admin_edit_member.html", member=member)
+
+
+@app.route("/admin/member/<member_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_member(member_id):
+    """Delete a member."""
+    if delete_member(member_id):
+        flash("Member deleted", "success")
+    else:
+        flash("Failed to delete member", "error")
+    
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/pending/<tag_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_pending(tag_id):
+    """Delete a pending tag."""
+    if remove_pending_tag(tag_id):
+        flash("Pending tag removed", "success")
+    else:
+        flash("Failed to remove pending tag", "error")
+    
+    return redirect(url_for("admin"))
 
 
 @app.route("/api/simulate/<member_id>", methods=["POST"])
+@admin_required
 def api_simulate(member_id: str):
-    """Simulate a scan for testing (admin use)."""
+    """Simulate a scan for testing."""
     result = simulate_scan(member_id)
     if result:
         return jsonify({"success": True, "result": result})
@@ -194,5 +347,5 @@ def create_app(use_rfid: bool = True):
 
 
 if __name__ == "__main__":
-    app = create_app(use_rfid=False)  # Test mode without RFID
+    app = create_app(use_rfid=False)
     app.run(host=WEB_HOST, port=WEB_PORT, debug=True)

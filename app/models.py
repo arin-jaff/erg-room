@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from contextlib import contextmanager
-from app.config import DB_PATH, TEAM_MEMBERS, AUTO_CHECKOUT_HOURS
+from app.config import DB_PATH, AUTO_CHECKOUT_HOURS
 
 
 @contextmanager
@@ -16,7 +16,7 @@ def get_db():
 
 
 def init_db():
-    """Initialize database tables and seed team members."""
+    """Initialize database tables."""
     with get_db() as conn:
         cursor = conn.cursor()
         
@@ -41,53 +41,143 @@ def init_db():
             )
         """)
         
-        # Scan history log (optional, for analytics)
+        # Scan history log
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scan_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 member_id TEXT,
-                action TEXT,  -- 'in' or 'out'
+                action TEXT,
                 scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (member_id) REFERENCES members(id)
             )
         """)
         
-        # Add profile_picture column if it doesn't exist (migration)
-        try:
-            cursor.execute("ALTER TABLE members ADD COLUMN profile_picture TEXT DEFAULT NULL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        # Add checked_in_at column if it doesn't exist (migration)
-        try:
-            cursor.execute("ALTER TABLE presence ADD COLUMN checked_in_at TIMESTAMP")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        # Seed team members from config
-        for member in TEAM_MEMBERS:
-            cursor.execute(
-                "INSERT OR IGNORE INTO members (id, name) VALUES (?, ?)",
-                (member["id"], member["name"])
+        # Pending registrations (tags written but not yet assigned to a user)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pending_tags (
+                id TEXT PRIMARY KEY,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-            cursor.execute(
-                "INSERT OR IGNORE INTO presence (member_id, is_present) VALUES (?, 0)",
-                (member["id"],)
-            )
+        """)
         
         conn.commit()
         print(f"Database initialized at {DB_PATH}")
 
 
-def toggle_presence(member_id: str) -> dict | None:
-    """
-    Toggle a member's presence status.
-    Returns the member info with new status, or None if not found.
-    """
+def add_pending_tag(tag_id: str) -> bool:
+    """Add a newly written tag to pending registrations."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO pending_tags (id) VALUES (?)",
+                (tag_id,)
+            )
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False  # Already exists
+
+
+def get_pending_tags() -> list[dict]:
+    """Get all pending tag registrations."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, created_at FROM pending_tags ORDER BY created_at DESC")
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def remove_pending_tag(tag_id: str) -> bool:
+    """Remove a tag from pending registrations."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM pending_tags WHERE id = ?", (tag_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def create_member(member_id: str, name: str) -> bool:
+    """Create a new member from a pending tag."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        try:
+            # Add to members
+            cursor.execute(
+                "INSERT INTO members (id, name) VALUES (?, ?)",
+                (member_id, name)
+            )
+            # Create presence record
+            cursor.execute(
+                "INSERT INTO presence (member_id, is_present) VALUES (?, 0)",
+                (member_id,)
+            )
+            # Remove from pending
+            cursor.execute("DELETE FROM pending_tags WHERE id = ?", (member_id,))
+            conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+
+
+def update_member(member_id: str, name: str = None, profile_picture: str = None) -> bool:
+    """Update member details."""
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # Get current status
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+        
+        if profile_picture is not None:
+            updates.append("profile_picture = ?")
+            params.append(profile_picture)
+        
+        if not updates:
+            return False
+        
+        params.append(member_id)
+        cursor.execute(
+            f"UPDATE members SET {', '.join(updates)} WHERE id = ?",
+            params
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def delete_member(member_id: str) -> bool:
+    """Delete a member and their presence record."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM presence WHERE member_id = ?", (member_id,))
+        cursor.execute("DELETE FROM scan_log WHERE member_id = ?", (member_id,))
+        cursor.execute("DELETE FROM members WHERE id = ?", (member_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def update_member_uuid(old_id: str, new_id: str) -> bool:
+    """Update a member's UUID (admin only)."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        try:
+            # Update in order to maintain foreign key relationships
+            cursor.execute("UPDATE scan_log SET member_id = ? WHERE member_id = ?", (new_id, old_id))
+            cursor.execute("UPDATE presence SET member_id = ? WHERE member_id = ?", (new_id, old_id))
+            cursor.execute("UPDATE members SET id = ? WHERE id = ?", (new_id, old_id))
+            conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.IntegrityError:
+            return False
+
+
+def toggle_presence(member_id: str) -> dict | None:
+    """Toggle a member's presence status."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        
         cursor.execute("""
             SELECT m.id, m.name, m.profile_picture, p.is_present 
             FROM members m 
@@ -103,21 +193,19 @@ def toggle_presence(member_id: str) -> dict | None:
         action = "in" if new_status else "out"
         now = datetime.now()
         
-        # Update presence
-        if new_status:  # Checking IN
+        if new_status:
             cursor.execute("""
                 UPDATE presence 
                 SET is_present = ?, last_scan = ?, checked_in_at = ?
                 WHERE member_id = ?
             """, (new_status, now, now, member_id))
-        else:  # Checking OUT
+        else:
             cursor.execute("""
                 UPDATE presence 
                 SET is_present = ?, last_scan = ?, checked_in_at = NULL
                 WHERE member_id = ?
             """, (new_status, now, member_id))
         
-        # Log the scan
         cursor.execute(
             "INSERT INTO scan_log (member_id, action) VALUES (?, ?)",
             (member_id, action)
@@ -152,7 +240,6 @@ def get_present_members() -> list[dict]:
         for row in cursor.fetchall():
             member = dict(row)
             
-            # Calculate time in room
             if member["checked_in_at"]:
                 checked_in = datetime.fromisoformat(member["checked_in_at"])
                 duration = now - checked_in
@@ -199,7 +286,7 @@ def get_all_members() -> list[dict]:
 
 
 def auto_checkout_stale():
-    """Mark members as 'out' if they haven't scanned in AUTO_CHECKOUT_HOURS."""
+    """Mark members as 'out' if checked in too long."""
     cutoff = datetime.now() - timedelta(hours=AUTO_CHECKOUT_HOURS)
     with get_db() as conn:
         cursor = conn.cursor()
@@ -214,7 +301,7 @@ def auto_checkout_stale():
 
 
 def get_member_by_id(member_id: str) -> dict | None:
-    """Look up a member by their QR code ID."""
+    """Look up a member by their ID."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -249,6 +336,22 @@ def get_member_presence(member_id: str) -> dict | None:
         """, (member_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
+
+
+def is_pending_tag(tag_id: str) -> bool:
+    """Check if a tag ID is in pending registrations."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM pending_tags WHERE id = ?", (tag_id,))
+        return cursor.fetchone() is not None
+
+
+def is_registered_member(tag_id: str) -> bool:
+    """Check if a tag ID belongs to a registered member."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM members WHERE id = ?", (tag_id,))
+        return cursor.fetchone() is not None
 
 
 if __name__ == "__main__":

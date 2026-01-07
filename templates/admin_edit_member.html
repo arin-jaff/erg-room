@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Member - Erg Room</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Edit Member</h1>
+        </header>
+
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="profile-card">
+                <div class="profile-photo">
+                    {% if member.profile_picture %}
+                    <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+                    {% else %}
+                    <div class="photo-placeholder large">{{ member.name[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="POST" class="edit-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" value="{{ member.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="uuid">UUID (Tag ID)</label>
+                    <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
+                    <p class="hint">Warning: Changing this will require re-registering the physical tag</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <p>{% if member.is_present %}Currently in the erg room{% else %}Not in the erg room{% endif %}</p>
+                </div>
+
+                <button type="submit">Save Changes</button>
+            </form>
+
+            <div class="danger-zone">
+                <h2>Danger Zone</h2>
+                <form method="POST" action="/admin/member/{{ member.id }}/delete" 
+                      onsubmit="return confirm('Are you sure you want to delete this member?');">
+                    <button type="submit" class="btn-danger">Delete Member</button>
+                </form>
+            </div>
+        </main>
+
+        <footer>
+            <a href="/admin">← Back to admin</a>
+        </footer>
+    </div>
+</body>
+</html>
