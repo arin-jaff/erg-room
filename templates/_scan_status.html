@@ -1,22 +1,37 @@
 {% if last_scan and last_scan.timestamp %}
-<div class="scan-box {{ last_scan.action }}">
+<div class="scanner-mini">
     {% if last_scan.action == 'registered' %}
-        <div class="scan-name">New Tag Registered!</div>
-        <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
+        <span class="icon">✨</span>
+        <div class="info">
+            <div class="name">New Tag!</div>
+            <div class="action registered">{{ last_scan.tag_id[:8] }}...</div>
+        </div>
     {% elif last_scan.action == 'pending' %}
-        <div class="scan-name">Pending Tag</div>
-        <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
+        <span class="icon">⏳</span>
+        <div class="info">
+            <div class="name">Pending</div>
+            <div class="action">{{ last_scan.tag_id[:8] }}...</div>
+        </div>
     {% elif last_scan.member_name %}
-        <div class="scan-name">{{ last_scan.member_name }}</div>
-        <div class="scan-action">{% if last_scan.action == 'in' %}✓ Checked In{% else %}✓ Checked Out{% endif %}</div>
+        <span class="icon">{% if last_scan.action == 'in' %}✓{% else %}←{% endif %}</span>
+        <div class="info">
+            <div class="name">{{ last_scan.member_name }}</div>
+            <div class="action {{ last_scan.action }}">{% if last_scan.action == 'in' %}Checked In{% else %}Checked Out{% endif %}</div>
+        </div>
     {% else %}
-        <div class="scan-name">Unknown Tag</div>
-        <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
+        <span class="icon">❓</span>
+        <div class="info">
+            <div class="name">Unknown</div>
+            <div class="action">{{ last_scan.tag_id[:8] }}...</div>
+        </div>
     {% endif %}
 </div>
 {% else %}
-<div class="scan-box">
-    <div class="scan-name">📡</div>
-    <div class="scan-action">Waiting for scan...</div>
+<div class="scanner-mini">
+    <span class="icon">📡</span>
+    <div class="info">
+        <div class="name">Waiting...</div>
+        <div class="action">Tap to scan</div>
+    </div>
 </div>
 {% endif %}

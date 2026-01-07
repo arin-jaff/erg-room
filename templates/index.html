@@ -6,30 +6,265 @@
     <title>Who's In the Erg Room?</title>
     <script src="/static/htmx.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Scanner status corner widget */
+        .scanner-widget {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 100;
+            background: var(--card-bg, #2a2a2a);
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 180px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .scanner-widget:hover {
+            transform: scale(1.05);
+        }
+        
+        .scanner-widget.flash-in {
+            animation: flashIn 0.6s ease;
+            border-color: #4ade80;
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+        }
+        
+        .scanner-widget.flash-out {
+            animation: flashOut 0.6s ease;
+            border-color: #f87171;
+            box-shadow: 0 4px 20px rgba(248, 113, 113, 0.4);
+        }
+        
+        .scanner-widget.flash-registered {
+            animation: flashRegistered 0.6s ease;
+            border-color: #60a5fa;
+            box-shadow: 0 4px 20px rgba(96, 165, 250, 0.4);
+        }
+        
+        @keyframes flashIn {
+            0%, 100% { background: var(--card-bg, #2a2a2a); }
+            50% { background: rgba(74, 222, 128, 0.2); }
+        }
+        
+        @keyframes flashOut {
+            0%, 100% { background: var(--card-bg, #2a2a2a); }
+            50% { background: rgba(248, 113, 113, 0.2); }
+        }
+        
+        @keyframes flashRegistered {
+            0%, 100% { background: var(--card-bg, #2a2a2a); }
+            50% { background: rgba(96, 165, 250, 0.2); }
+        }
+        
+        .scanner-mini {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .scanner-mini .icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .scanner-mini .info {
+            overflow: hidden;
+        }
+        
+        .scanner-mini .name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .scanner-mini .action {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+        
+        .scanner-mini .action.in { color: #4ade80; opacity: 1; }
+        .scanner-mini .action.out { color: #f87171; opacity: 1; }
+        .scanner-mini .action.registered { color: #60a5fa; opacity: 1; }
+        
+        /* Present list updates */
+        .member-grid {
+            transition: all 0.3s ease;
+        }
+        
+        .member-item.new-checkin {
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>Who's In the Erg Room?</h1>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Who's In the Erg Room?</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
     </header>
 
     <section>
-        <h2>Scanner</h2>
-        <div id="scan-status" hx-get="/fragment/scan-status" hx-trigger="every 2s" hx-swap="innerHTML">
-            {% include '_scan_status.html' %}
-        </div>
-        <p class="hint">Tap your RFID tag to check in/out</p>
-    </section>
-
-    <section>
-        <h2>Currently Here</h2>
-        <div id="present-list" hx-get="/fragment/present-list" hx-trigger="every 3s" hx-swap="innerHTML">
+        <h2>Currently Here <span id="present-count">({{ present|length }})</span></h2>
+        <div id="present-list">
             {% include '_present_list.html' %}
         </div>
     </section>
+
+    <!-- Corner scanner widget -->
+    <div id="scanner-widget" class="scanner-widget">
+        <div id="scan-status">
+            {% include '_scan_status.html' %}
+        </div>
+    </div>
 
     <footer>
         <a href="/login">Edit Profile</a>
         <a href="/admin/login">Admin</a>
     </footer>
+
+    <script>
+        // Track last scan timestamp to detect new scans
+        let lastScanTimestamp = null;
+        let pollInterval = 2000; // Check every 2 seconds
+        
+        // Poll for scan updates
+        async function checkForScans() {
+            try {
+                const response = await fetch('/api/last_scan');
+                const data = await response.json();
+                
+                // Check if this is a new scan
+                if (data.timestamp && data.timestamp !== lastScanTimestamp) {
+                    lastScanTimestamp = data.timestamp;
+                    
+                    // Update the scanner widget
+                    updateScannerWidget(data);
+                    
+                    // Flash animation based on action
+                    flashScanner(data.action);
+                    
+                    // If it's a check in/out, refresh the present list
+                    if (data.action === 'in' || data.action === 'out') {
+                        refreshPresentList();
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking for scans:', error);
+            }
+        }
+        
+        // Update the scanner widget content
+        function updateScannerWidget(data) {
+            const scanStatus = document.getElementById('scan-status');
+            
+            let icon = '📡';
+            let name = 'Waiting...';
+            let actionText = 'Tap to scan';
+            let actionClass = '';
+            
+            if (data.timestamp) {
+                if (data.action === 'registered') {
+                    icon = '✨';
+                    name = 'New Tag!';
+                    actionText = data.tag_id.substring(0, 8) + '...';
+                    actionClass = 'registered';
+                } else if (data.action === 'pending') {
+                    icon = '⏳';
+                    name = 'Pending';
+                    actionText = data.tag_id.substring(0, 8) + '...';
+                } else if (data.member_name) {
+                    icon = data.action === 'in' ? '✓' : '←';
+                    name = data.member_name;
+                    actionText = data.action === 'in' ? 'Checked In' : 'Checked Out';
+                    actionClass = data.action;
+                } else if (data.action === 'unknown') {
+                    icon = '❓';
+                    name = 'Unknown';
+                    actionText = data.tag_id.substring(0, 8) + '...';
+                }
+            }
+            
+            scanStatus.innerHTML = `
+                <div class="scanner-mini">
+                    <span class="icon">${icon}</span>
+                    <div class="info">
+                        <div class="name">${name}</div>
+                        <div class="action ${actionClass}">${actionText}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Flash the scanner widget
+        function flashScanner(action) {
+            const widget = document.getElementById('scanner-widget');
+            
+            // Remove existing flash classes
+            widget.classList.remove('flash-in', 'flash-out', 'flash-registered');
+            
+            // Add appropriate flash class
+            if (action === 'in') {
+                widget.classList.add('flash-in');
+            } else if (action === 'out') {
+                widget.classList.add('flash-out');
+            } else if (action === 'registered') {
+                widget.classList.add('flash-registered');
+            }
+            
+            // Remove flash class after animation
+            setTimeout(() => {
+                widget.classList.remove('flash-in', 'flash-out', 'flash-registered');
+            }, 600);
+        }
+        
+        // Refresh the present list
+        async function refreshPresentList() {
+            try {
+                const response = await fetch('/fragment/present-list');
+                const html = await response.text();
+                
+                const presentList = document.getElementById('present-list');
+                presentList.innerHTML = html;
+                
+                // Update count
+                const countResponse = await fetch('/api/present');
+                const countData = await countResponse.json();
+                document.getElementById('present-count').textContent = `(${countData.count})`;
+                
+            } catch (error) {
+                console.error('Error refreshing present list:', error);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get initial scan state
+            checkForScans();
+            
+            // Start polling
+            setInterval(checkForScans, pollInterval);
+            
+            // Also refresh present list periodically (less frequently)
+            setInterval(refreshPresentList, 10000);
+        });
+    </script>
 </body>
 </html>
