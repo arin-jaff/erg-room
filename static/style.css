@@ -1,4 +1,4 @@
-/* Who's In the Erg Room? - Minimal White/Black Theme (RFID Version) */
+/* Who's In the Erg Room? - Simple Minimal Theme */
 
 * {
     box-sizing: border-box;
@@ -8,429 +8,138 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #ffffff;
-    color: #000000;
-    min-height: 100vh;
+    background: #fff;
+    color: #000;
     line-height: 1.5;
-}
-
-.container {
-    max-width: 800px;
+    padding: 1rem;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 2rem 1rem;
 }
 
-/* Header */
-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e0e0e0;
-}
+/* Typography */
+h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+h2 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; }
+p { margin-bottom: 0.5rem; }
+a { color: #000; }
+code { background: #f0f0f0; padding: 0.1rem 0.3rem; border-radius: 2px; font-size: 0.9rem; }
 
-header h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
+/* Layout */
+header { border-bottom: 1px solid #ccc; padding-bottom: 1rem; margin-bottom: 1rem; text-align: center; }
+footer { border-top: 1px solid #ccc; padding-top: 1rem; margin-top: 2rem; text-align: center; font-size: 0.9rem; }
+footer a { margin: 0 0.5rem; }
+section { margin-bottom: 1.5rem; }
+
+/* Forms */
+input, button { 
+    padding: 0.5rem; 
+    font-size: 1rem; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
     margin-bottom: 0.5rem;
 }
-
-.subtitle {
-    color: #666;
-    font-size: 0.95rem;
-}
-
-/* Scan Section */
-.scan-section {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.scan-section h2,
-.presence-section h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #666;
-}
-
-/* Scan Status */
-.scan-waiting {
-    padding: 2rem;
-    background: #f9f9f9;
-    border-radius: 8px;
-    border: 2px dashed #ddd;
-}
-
-.scan-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.scan-message {
-    color: #888;
-    font-size: 1rem;
-}
-
-.scan-result {
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 2px solid #000;
-    animation: pulse 0.5s ease-out;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1.02); }
-    100% { transform: scale(1); }
-}
-
-.scan-result.scan-in {
-    background: #f0fff0;
-    border-color: #2a2;
-}
-
-.scan-result.scan-out {
-    background: #fff0f0;
-    border-color: #a22;
-}
-
-.scan-result.scan-unknown {
-    background: #fffbf0;
-    border-color: #a82;
-}
-
-.scan-name {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.scan-action {
-    font-size: 1rem;
-    color: #666;
-}
-
-.scan-in .scan-action {
-    color: #2a2;
-}
-
-.scan-out .scan-action {
-    color: #a22;
-}
-
-.presence-section {
-    margin-bottom: 2rem;
-}
-
-/* Member Grid */
-.member-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 2rem;
-    padding: 1rem 0;
-}
-
-.member-card {
-    text-align: center;
-}
-
-.member-photo {
-    width: 120px;
-    height: 120px;
-    margin: 0 auto 1rem;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid #000;
-}
-
-.member-photo img {
+input { width: 100%; }
+button { 
+    background: #000; 
+    color: #fff; 
+    border: none; 
+    cursor: pointer; 
     width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
-
-.photo-placeholder {
-    width: 100%;
-    height: 100%;
-    background: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.photo-placeholder.large {
-    font-size: 4rem;
-}
-
-.photo-placeholder.small {
-    font-size: 1.25rem;
-}
-
-.member-name {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.member-duration {
-    font-size: 0.85rem;
-    color: #666;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: #666;
-}
-
-.empty-state p:first-child {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    color: #000;
-}
-
-.hint {
-    font-size: 0.85rem;
-    color: #888;
-    margin-top: 0.5rem;
-}
-
-/* Footer */
-footer {
-    text-align: center;
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e0e0e0;
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-}
-
-footer a {
-    color: #666;
-    text-decoration: none;
-    font-size: 0.9rem;
-}
-
-footer a:hover {
-    color: #000;
-    text-decoration: underline;
-}
-
-/* Login Form */
-.login-form {
-    max-width: 300px;
-    margin: 2rem auto;
-}
-
-.login-form label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-.login-form input {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-}
-
-.login-form input:focus {
-    outline: none;
-    border-color: #000;
-}
-
-.login-form button,
-.upload-form button {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    background: #000;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.login-form button:hover,
-.upload-form button:hover {
-    background: #333;
-}
+button:hover { background: #333; }
+button.btn-secondary { background: #f0f0f0; color: #000; border: 1px solid #ccc; }
+button.btn-secondary:hover { background: #e0e0e0; }
+button.btn-danger { background: #c00; }
+button.btn-danger:hover { background: #900; }
+button.btn-small { width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+label { display: block; font-weight: 500; margin-bottom: 0.25rem; }
 
 /* Flash Messages */
-.flash {
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
+.flash { padding: 0.5rem; margin-bottom: 1rem; border-radius: 4px; text-align: center; }
+.flash.error { background: #fee; color: #c00; }
+.flash.success { background: #efe; color: #060; }
+
+/* Cards */
+.card {
+    border: 1px solid #ccc;
     border-radius: 4px;
-    text-align: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
+.card.active { background: #f0f0f0; border-color: #000; }
 
-.flash.error {
-    background: #fee;
-    color: #c00;
-    border: 1px solid #fcc;
-}
-
-.flash.success {
-    background: #efe;
-    color: #060;
-    border: 1px solid #cfc;
-}
-
-/* Profile Page */
-.profile-card {
-    text-align: center;
-    padding: 2rem 0;
-}
-
-.profile-photo {
-    width: 150px;
-    height: 150px;
-    margin: 0 auto 1.5rem;
+/* Photos */
+.photo {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
     overflow: hidden;
-    border: 2px solid #000;
+    flex-shrink: 0;
 }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo.large { width: 100px; height: 100px; font-size: 2.5rem; margin: 0 auto 1rem; }
 
-.profile-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* Status */
+.status { 
+    font-size: 0.75rem; 
+    padding: 0.2rem 0.5rem; 
+    background: #f0f0f0; 
+    border-radius: 4px; 
+    margin-left: auto;
 }
+.status.in { background: #000; color: #fff; }
 
-.profile-name {
-    font-size: 1.5rem;
-    font-weight: 600;
+/* Scan Display */
+.scan-box {
+    text-align: center;
+    padding: 1.5rem;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+.scan-box.in { background: #efe; border-color: #0a0; border-style: solid; }
+.scan-box.out { background: #fee; border-color: #a00; border-style: solid; }
+.scan-box.registered { background: #efe; border-color: #0a0; border-style: solid; }
+.scan-box.pending { background: #ffe; border-color: #aa0; border-style: solid; }
+.scan-box.unknown { background: #fee; border-color: #a00; border-style: solid; }
+.scan-name { font-size: 1.25rem; font-weight: bold; }
+.scan-action { font-size: 0.9rem; color: #666; }
+
+/* Member Grid */
+.member-grid { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+.member-item { text-align: center; width: 120px; }
+.member-item .photo { margin: 0 auto 0.5rem; width: 80px; height: 80px; font-size: 2rem; }
+.member-name { font-weight: 500; font-size: 0.9rem; }
+.member-time { font-size: 0.75rem; color: #666; }
+
+/* Empty State */
+.empty { text-align: center; padding: 2rem; color: #666; }
+
+/* Hint Text */
+.hint { font-size: 0.8rem; color: #888; }
+
+/* Inline Form */
+.inline-form { display: flex; gap: 0.5rem; align-items: center; }
+.inline-form input { margin-bottom: 0; }
+.inline-form button { width: auto; }
+
+/* Registration Active */
+.reg-active { 
+    background: #efe; 
+    padding: 0.75rem; 
+    border-radius: 4px; 
+    text-align: center; 
     margin-bottom: 0.5rem;
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-}
-
-.status-badge.in {
-    background: #000;
-    color: #fff;
-}
-
-.status-badge.out {
-    background: #f0f0f0;
-    color: #666;
-}
-
-/* Upload Section */
-.upload-section {
-    max-width: 300px;
-    margin: 2rem auto;
-    padding-top: 2rem;
-    border-top: 1px solid #e0e0e0;
-}
-
-.upload-section h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-
-.upload-form input[type="file"] {
-    width: 100%;
-    padding: 0.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-/* Admin Page */
-.admin-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.admin-card {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.admin-card:hover {
-    background: #f5f5f5;
-}
-
-.admin-card.present {
-    background: #f0f0f0;
-    border-color: #000;
-}
-
-.admin-photo {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 1px solid #ccc;
-    flex-shrink: 0;
-}
-
-.admin-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.admin-info {
-    flex-grow: 1;
-}
-
-.admin-name {
-    font-weight: 500;
-}
-
-.admin-id {
-    font-size: 0.8rem;
-    color: #888;
-    font-family: monospace;
-}
-
-.admin-status {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    background: #f0f0f0;
-}
-
-.admin-card.present .admin-status {
-    background: #000;
-    color: #fff;
-}
-
-h2 {
-    font-size: 1.1rem;
-    margin: 2rem 0 1rem;
-}
-
-code {
-    background: #f0f0f0;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
+/* Danger Zone */
+.danger { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; text-align: center; }
+.danger h2 { color: #c00; }

@@ -1,31 +1,22 @@
 {% if last_scan and last_scan.timestamp %}
-<div class="scan-result {% if last_scan.action == 'in' %}scan-in{% elif last_scan.action == 'out' %}scan-out{% elif last_scan.action == 'registered' %}scan-registered{% elif last_scan.action == 'pending' %}scan-pending{% elif last_scan.action == 'unknown' %}scan-unknown{% endif %}">
+<div class="scan-box {{ last_scan.action }}">
     {% if last_scan.action == 'registered' %}
         <div class="scan-name">New Tag Registered!</div>
         <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
-        <div class="scan-hint">Go to Admin to assign a name</div>
     {% elif last_scan.action == 'pending' %}
         <div class="scan-name">Pending Tag</div>
         <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
-        <div class="scan-hint">Assign in Admin panel</div>
     {% elif last_scan.member_name %}
         <div class="scan-name">{{ last_scan.member_name }}</div>
-        <div class="scan-action">
-            {% if last_scan.action == 'in' %}
-                ✓ Checked In
-            {% else %}
-                ✓ Checked Out
-            {% endif %}
-        </div>
+        <div class="scan-action">{% if last_scan.action == 'in' %}✓ Checked In{% else %}✓ Checked Out{% endif %}</div>
     {% else %}
         <div class="scan-name">Unknown Tag</div>
         <div class="scan-action">ID: {{ last_scan.tag_id }}</div>
-        <div class="scan-hint">Register in Admin panel</div>
     {% endif %}
 </div>
 {% else %}
-<div class="scan-waiting">
-    <div class="scan-icon">📡</div>
-    <div class="scan-message">Waiting for scan...</div>
+<div class="scan-box">
+    <div class="scan-name">📡</div>
+    <div class="scan-action">Waiting for scan...</div>
 </div>
 {% endif %}

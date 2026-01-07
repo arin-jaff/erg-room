@@ -7,40 +7,27 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Sign In</h1>
-            <p class="subtitle">Enter your QR code ID to access your profile</p>
-        </header>
+    <header>
+        <h1>Sign In</h1>
+    </header>
 
-        <main>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-            <form method="POST" class="login-form">
-                <label for="member_id">QR Code ID</label>
-                <input 
-                    type="text" 
-                    id="member_id" 
-                    name="member_id" 
-                    placeholder="e.g. rower001"
-                    required
-                    autofocus
-                >
-                <button type="submit">Sign In</button>
-            </form>
+    <form method="POST">
+        <label for="member_id">Your Tag ID</label>
+        <input type="text" id="member_id" name="member_id" placeholder="e.g. a1b2c3d4e5f6" required autofocus>
+        <button type="submit">Sign In</button>
+    </form>
+    <p class="hint">Your tag ID is shown when you scan</p>
 
-            <p class="hint">Your QR code ID is printed below your QR code</p>
-        </main>
-
-        <footer>
-            <a href="/">← Back to erg room</a>
-        </footer>
-    </div>
+    <footer>
+        <a href="/">← Back</a>
+    </footer>
 </body>
 </html>

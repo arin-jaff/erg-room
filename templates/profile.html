@@ -7,54 +7,50 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Your Profile</h1>
-        </header>
+    <header>
+        <h1>Your Profile</h1>
+    </header>
 
-        <main>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-            <div class="profile-card">
-                <div class="profile-photo">
-                    {% if member.profile_picture %}
-                    <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
-                    {% else %}
-                    <div class="photo-placeholder large">{{ member.name[0] }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="profile-name">{{ member.name }}</div>
-                
-                <div class="profile-status">
-                    {% if member.is_present %}
-                    <span class="status-badge in">Currently in the erg room</span>
-                    {% else %}
-                    <span class="status-badge out">Not in the erg room</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="upload-section">
-                <h2>Update Profile Picture</h2>
-                <form method="POST" action="/profile/upload" enctype="multipart/form-data" class="upload-form">
-                    <input type="file" name="photo" accept="image/*" required>
-                    <button type="submit">Upload</button>
-                </form>
-                <p class="hint">Accepted formats: PNG, JPG, GIF, WebP (max 5MB)</p>
-            </div>
-        </main>
-
-        <footer>
-            <a href="/">← Back to erg room</a>
-            <a href="/logout">Sign out</a>
-        </footer>
+    <div class="photo large">
+        {% if member.profile_picture %}
+        <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+        {% else %}
+        {{ member.name[0] }}
+        {% endif %}
     </div>
+
+    <p style="text-align:center">
+        <strong>{{ member.name }}</strong><br>
+        <span class="status {% if member.is_present %}in{% endif %}">
+            {% if member.is_present %}IN{% else %}OUT{% endif %}
+        </span><br>
+        <code>{{ member.id }}</code>
+    </p>
+
+    <h2>Update Name</h2>
+    <form method="POST" action="/profile/update">
+        <input type="text" name="name" value="{{ member.name }}" required>
+        <button type="submit">Save</button>
+    </form>
+
+    <h2>Update Photo</h2>
+    <form method="POST" action="/profile/upload" enctype="multipart/form-data">
+        <input type="file" name="photo" accept="image/*" required>
+        <button type="submit">Upload</button>
+    </form>
+    <p class="hint">PNG, JPG, GIF, WebP (max 5MB)</p>
+
+    <footer>
+        <a href="/">← Back</a>
+        <a href="/logout">Sign out</a>
+    </footer>
 </body>
 </html>

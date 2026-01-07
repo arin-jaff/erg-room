@@ -7,121 +7,97 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Admin Panel</h1>
-        </header>
+    <header>
+        <h1>Admin Panel</h1>
+    </header>
 
-        <main>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-            <!-- Registration Mode -->
-            <section class="admin-section">
-                <h2>Tag Registration</h2>
-                <div class="registration-controls">
-                    {% if registration_mode %}
-                    <div class="registration-active">
-                        <span class="status-indicator active"></span>
-                        Registration Mode ACTIVE - Tap a tag to register
-                    </div>
-                    <form method="POST" action="/admin/register/stop">
-                        <button type="submit" class="btn-secondary">Stop Registration</button>
-                    </form>
+    <!-- Registration Mode -->
+    <section>
+        <h2>Register New Tags</h2>
+        {% if registration_mode %}
+        <div class="reg-active">⚡ Registration Mode ON - Tap a tag</div>
+        <form method="POST" action="/admin/register/stop">
+            <button type="submit" class="btn-secondary">Stop Registration</button>
+        </form>
+        {% else %}
+        <form method="POST" action="/admin/register/start">
+            <button type="submit">Start Registration Mode</button>
+        </form>
+        <form method="POST" action="/admin/register/simulate" style="margin-top:0.5rem">
+            <button type="submit" class="btn-secondary">Simulate (Test)</button>
+        </form>
+        {% endif %}
+    </section>
+
+    <!-- Pending Tags -->
+    {% if pending %}
+    <section>
+        <h2>Pending Tags ({{ pending|length }})</h2>
+        {% for tag in pending %}
+        <div class="card">
+            <div>
+                <code>{{ tag.id }}</code>
+                <span class="hint"> - {{ tag.created_at[:16] }}</span>
+            </div>
+        </div>
+        <form method="POST" action="/admin/member/create" class="inline-form">
+            <input type="hidden" name="tag_id" value="{{ tag.id }}">
+            <input type="text" name="name" placeholder="Name" required>
+            <button type="submit">Create</button>
+            <form method="POST" action="/admin/pending/{{ tag.id }}/delete" style="display:inline">
+                <button type="submit" class="btn-danger btn-small">×</button>
+            </form>
+        </form>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <!-- All Members -->
+    <section>
+        <h2>Members ({{ members|length }})</h2>
+        {% if members %}
+            {% for member in members %}
+            <div class="card {% if member.is_present %}active{% endif %}" onclick="simulateScan('{{ member.id }}')" style="cursor:pointer">
+                <div class="photo">
+                    {% if member.profile_picture %}
+                    <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
                     {% else %}
-                    <form method="POST" action="/admin/register/start">
-                        <button type="submit">Start Registration Mode</button>
-                    </form>
-                    <form method="POST" action="/admin/register/simulate" style="margin-top: 0.5rem;">
-                        <button type="submit" class="btn-secondary">Simulate Registration (Test)</button>
-                    </form>
+                    {{ member.name[0] }}
                     {% endif %}
                 </div>
-            </section>
-
-            <!-- Pending Tags -->
-            {% if pending %}
-            <section class="admin-section">
-                <h2>Pending Tags ({{ pending|length }})</h2>
-                <p class="hint">Tags that have been registered but not assigned to a user</p>
-                
-                {% for tag in pending %}
-                <div class="pending-card">
-                    <form method="POST" action="/admin/member/create" class="create-member-form">
-                        <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                        <div class="pending-info">
-                            <code>{{ tag.id }}</code>
-                            <span class="pending-date">{{ tag.created_at[:16] }}</span>
-                        </div>
-                        <input type="text" name="name" placeholder="Enter name" required>
-                        <button type="submit">Create Member</button>
-                        <form method="POST" action="/admin/pending/{{ tag.id }}/delete" style="display: inline;">
-                            <button type="submit" class="btn-danger btn-small">×</button>
-                        </form>
-                    </form>
+                <div>
+                    <strong>{{ member.name }}</strong><br>
+                    <code class="hint">{{ member.id }}</code>
                 </div>
-                {% endfor %}
-            </section>
-            {% endif %}
+                <span class="status {% if member.is_present %}in{% endif %}">
+                    {% if member.is_present %}IN{% else %}OUT{% endif %}
+                </span>
+                <a href="/admin/member/{{ member.id }}/edit" class="btn-small" onclick="event.stopPropagation()">Edit</a>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty">No members yet</div>
+        {% endif %}
+    </section>
 
-            <!-- All Members -->
-            <section class="admin-section">
-                <h2>All Members ({{ members|length }})</h2>
-                <p class="hint">Click a member to toggle presence, or use Edit to modify</p>
-                
-                {% if members %}
-                <div class="admin-list">
-                    {% for member in members %}
-                    <div class="admin-card {% if member.is_present %}present{% endif %}">
-                        <div class="admin-photo" onclick="simulateScan('{{ member.id }}')">
-                            {% if member.profile_picture %}
-                            <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
-                            {% else %}
-                            <div class="photo-placeholder small">{{ member.name[0] }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="admin-info" onclick="simulateScan('{{ member.id }}')">
-                            <div class="admin-name">{{ member.name }}</div>
-                            <div class="admin-id">{{ member.id }}</div>
-                        </div>
-                        <div class="admin-status">
-                            {% if member.is_present %}IN{% else %}OUT{% endif %}
-                        </div>
-                        <div class="admin-actions">
-                            <a href="/admin/member/{{ member.id }}/edit" class="btn-small">Edit</a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="empty-state">No members yet. Register a tag to get started.</p>
-                {% endif %}
-            </section>
-        </main>
-
-        <footer>
-            <a href="/">← Back to erg room</a>
-            <a href="/admin/logout">Sign out</a>
-        </footer>
-    </div>
+    <footer>
+        <a href="/">← Back</a>
+        <a href="/admin/logout">Sign out</a>
+    </footer>
 
     <script>
-        async function simulateScan(memberId) {
-            const response = await fetch(`/api/simulate/${memberId}`, {
-                method: 'POST'
-            });
-            const data = await response.json();
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        }
+    async function simulateScan(id) {
+        await fetch('/api/simulate/' + id, {method: 'POST'});
+        location.reload();
+    }
     </script>
 </body>
 </html>

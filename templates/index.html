@@ -8,37 +8,28 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Who's In the Erg Room?</h1>
-        </header>
+    <header>
+        <h1>Who's In the Erg Room?</h1>
+    </header>
 
-        <main>
-            <div class="scan-section">
-                <h2>RFID Scanner</h2>
-                <div id="scan-status"
-                     hx-get="/fragment/scan-status"
-                     hx-trigger="every 2s"
-                     hx-swap="innerHTML">
-                    {% include '_scan_status.html' %}
-                </div>
-                <p class="hint">Tap your RFID tag on the reader to check in/out</p>
-            </div>
+    <section>
+        <h2>Scanner</h2>
+        <div id="scan-status" hx-get="/fragment/scan-status" hx-trigger="every 2s" hx-swap="innerHTML">
+            {% include '_scan_status.html' %}
+        </div>
+        <p class="hint">Tap your RFID tag to check in/out</p>
+    </section>
 
-            <div class="presence-section">
-                <h2>Currently Here</h2>
-                <div id="present-list" 
-                     hx-get="/fragment/present-list" 
-                     hx-trigger="every 3s"
-                     hx-swap="innerHTML">
-                    {% include '_present_list.html' %}
-                </div>
-            </div>
-        </main>
+    <section>
+        <h2>Currently Here</h2>
+        <div id="present-list" hx-get="/fragment/present-list" hx-trigger="every 3s" hx-swap="innerHTML">
+            {% include '_present_list.html' %}
+        </div>
+    </section>
 
-        <footer>
-            <a href="/login">Sign in to update profile</a>
-        </footer>
-    </div>
+    <footer>
+        <a href="/login">Edit Profile</a>
+        <a href="/admin/login">Admin</a>
+    </footer>
 </body>
 </html>
