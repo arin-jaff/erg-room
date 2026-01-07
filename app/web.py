@@ -1,10 +1,10 @@
 """
 Flask Web Application for "Who's In the Erg Room?"
+RFID Version - Uses RC522 RFID reader instead of camera/QR codes
 """
 
 import os
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, Response
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash
 from app.config import (
     SECRET_KEY, WEB_HOST, WEB_PORT, UPLOAD_DIR, 
     MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS
@@ -13,7 +13,7 @@ from app.models import (
     get_present_members, get_all_members, init_db,
     get_member_by_id, update_profile_picture, get_member_presence
 )
-from app.scanner import start_scanner, stop_scanner, simulate_scan, set_presence_callback, generate_frames
+from app.rfid_scanner import start_scanner, stop_scanner, simulate_scan, set_presence_callback, get_last_scan_info
 
 app = Flask(__name__, 
             template_folder="../templates",
@@ -39,16 +39,8 @@ def notify_clients(data: dict):
 def index():
     """Main page showing who's in the erg room."""
     present = get_present_members()
-    return render_template("index.html", present=present)
-
-
-@app.route("/video_feed")
-def video_feed():
-    """MJPEG video stream from the camera."""
-    return Response(
-        generate_frames(),
-        mimetype='multipart/x-mixed-replace; boundary=frame'
-    )
+    last_scan = get_last_scan_info()
+    return render_template("index.html", present=present, last_scan=last_scan)
 
 
 @app.route("/api/present")
@@ -61,11 +53,17 @@ def api_present():
     })
 
 
+@app.route("/api/last_scan")
+def api_last_scan():
+    """API endpoint returning last scan info."""
+    return jsonify(get_last_scan_info())
+
+
 # ============== Login Routes ==============
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Login page - enter QR code ID to access profile."""
+    """Login page - enter RFID tag ID to access profile."""
     if request.method == "POST":
         member_id = request.form.get("member_id", "").strip()
         
@@ -75,7 +73,7 @@ def login():
             session["member_name"] = member["name"]
             return redirect(url_for("profile"))
         else:
-            flash("Invalid QR code ID. Please try again.", "error")
+            flash("Invalid ID. Please try again.", "error")
     
     return render_template("login.html")
 
@@ -178,16 +176,23 @@ def fragment_present_list():
     return render_template("_present_list.html", present=present)
 
 
+@app.route("/fragment/scan-status")
+def fragment_scan_status():
+    """Return the last scan status fragment for HTMX."""
+    last_scan = get_last_scan_info()
+    return render_template("_scan_status.html", last_scan=last_scan)
+
+
 # ============== App Factory ==============
 
-def create_app(use_camera: bool = True):
+def create_app(use_rfid: bool = True):
     """Application factory."""
     init_db()
     set_presence_callback(notify_clients)
-    start_scanner(use_camera=use_camera)
+    start_scanner(use_rfid=use_rfid)
     return app
 
 
 if __name__ == "__main__":
-    app = create_app(use_camera=False)  # Test mode without camera
+    app = create_app(use_rfid=False)  # Test mode without RFID
     app.run(host=WEB_HOST, port=WEB_PORT, debug=True)
