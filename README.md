@@ -1,148 +1,110 @@
-# 🚣 Who's In the Erg Room?
+# erg-room-rfid
 
-A Raspberry Pi-powered presence tracker for your team's workout room. Teammates scan their personal QR code to check in/out, and a live webpage shows who's currently erging.
+RFID-based tracker for a shared workout space. Users tap an RFID tag to a MC522 module connected to a RasPi to check in/out, and a web interface displays who is currently present.
 
-## Features
+## Requirements
 
-- **QR Code scanning** - Low-power continuous scanning (~1-2 FPS)
-- **Toggle in/out** - One scan checks in, next scan checks out
-- **Live web display** - Updates every 3 seconds via HTMX
-- **Auto-checkout** - Automatically marks people as "out" after 4 hours
-- **Mobile-friendly** - Works great on phones and tablets
+- Raspberry Pi (tested on Zero 2 W)
+- RC522 RFID module
+- RFID tags (13.56MHz MIFARE)
+- Python 3.9+
 
-## Hardware Requirements
-
-- Raspberry Pi Zero 2 W (or any Pi with camera support)
-- Pi Camera Module (v2 or HQ Camera)
-- Power supply
-- Optional: Case with camera mount
-
-## Quick Start
-
-### 1. Clone to your Pi
+## Installation
 
 ```bash
-cd /home/arin/git
-# rsync from your dev machine, or:
-git clone <your-repo> erg-room
+# Enable SPI
+sudo raspi-config  # Interface Options > SPI > Enable
+sudo reboot
+
+# Install system dependencies
+sudo apt install -y python3-pip python3-venv python3-rpi.gpio
+
+# Clone and setup
+cd /home/pi/git
+git clone <repo> erg-room
 cd erg-room
-```
-
-### 2. Run the install script
-
-```bash
-chmod +x scripts/install.sh
-./scripts/install.sh
-```
-
-### 3. Edit team members
-
-```bash
-nano app/config.py
-# Update TEAM_MEMBERS list with your teammates
-```
-
-### 4. Regenerate QR codes
-
-```bash
+python3 -m venv venv --system-site-packages
 source venv/bin/activate
-python scripts/generate_qrcodes.py
-```
+pip install -r requirements.txt
 
-### 5. Start the app
+# Initialize database
+python -c "from app.models import init_db; init_db()"
 
-```bash
+# Run
 python run.py
 ```
 
-Visit `http://<pi-ip>:5000` to see the display!
+## Wiring
+
+```
+RC522 Pin    Pi GPIO
+---------    -------
+SDA          GPIO 8 (CE0)
+SCK          GPIO 11
+MOSI         GPIO 10
+MISO         GPIO 9
+RST          GPIO 25
+GND          Ground
+3.3V         3.3V (not 5V)
+```
+
+## Usage
+
+### Registering a new tag
+
+1. Go to `/admin/login` and enter the admin password (default: `ergroom2024`)
+2. Click "Start Registration Mode"
+3. Tap a blank RFID tag on the reader
+4. The tag ID appears under "Pending Tags"
+5. Enter a name and click "Create"
+
+### Checking in/out
+
+Users tap their registered tag on the reader. The system toggles their status between in and out.
+
+### Editing profiles
+
+Users can log in at `/login` with their tag ID to change their name or upload a profile picture. They cannot change their tag ID.
+
+Admins can edit any field including the tag ID at `/admin/member/<id>/edit`.
 
 ## Configuration
 
-Edit `app/config.py` to customize:
+Edit `app/config.py`:
 
-```python
-# Team members - add your whole crew!
-TEAM_MEMBERS = [
-    {"id": "rower001", "name": "Arin"},
-    {"id": "rower002", "name": "Alex"},
-    # ...
-]
+- `ADMIN_PASSWORD` - password for admin panel
+- `AUTO_CHECKOUT_HOURS` - automatically check out users after this many hours (default: 5)
+- `DEBOUNCE_SECONDS` - ignore repeat scans within this window (default: 3)
 
-# Scanner settings
-SCAN_INTERVAL = 0.5      # Seconds between scans
-DEBOUNCE_SECONDS = 5     # Ignore repeated scans within this window
-AUTO_CHECKOUT_HOURS = 4  # Auto-checkout after this many hours
+## Endpoints
+
+| Path | Description |
+|------|-------------|
+| `/` | Main display showing who is present |
+| `/login` | User login to edit profile |
+| `/profile` | User profile page |
+| `/admin/login` | Admin login |
+| `/admin` | Admin panel for registration and member management |
+
+## File structure
+
+```
+app/
+  config.py      - Configuration
+  models.py      - Database operations
+  rfid_scanner.py - RFID reading logic
+  web.py         - Flask routes
+templates/       - HTML templates
+static/          - CSS and JS
+data/            - SQLite database (created at runtime)
 ```
 
-## Auto-Start on Boot
+## Test mode
+
+Run without RFID hardware:
 
 ```bash
-sudo cp erg-room.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable erg-room
-sudo systemctl start erg-room
+python run.py --no-rfid
 ```
 
-## Development
-
-Run without camera (test mode):
-
-```bash
-python run.py --no-camera --debug
-```
-
-Use the admin panel at `/admin` to simulate scans.
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Main presence display |
-| `/admin` | GET | Admin panel |
-| `/api/present` | GET | JSON list of present members |
-| `/api/all` | GET | JSON list of all members |
-| `/api/simulate/<id>` | POST | Simulate a scan (testing) |
-
-## QR Code Distribution
-
-After running `generate_qrcodes.py`, you'll find PNG files in `qrcodes/`:
-
-- Print them on cardstock for lanyards
-- Or have teammates save the image to their phone's home screen
-- Each code is just the member ID (e.g., "rower001")
-
-## Troubleshooting
-
-**Camera not detected:**
-```bash
-sudo raspi-config
-# Interface Options -> Camera -> Enable
-sudo reboot
-```
-
-**Web page not loading:**
-```bash
-# Check if service is running
-sudo systemctl status erg-room
-
-# View logs
-journalctl -u erg-room -f
-```
-
-**QR codes not scanning:**
-- Ensure good lighting
-- Hold QR code 6-12 inches from camera
-- Check camera focus (Pi Camera v2 has fixed focus)
-
-## Power Consumption
-
-The Pi Zero 2 W with camera running this app draws approximately:
-- Idle (waiting for QR): ~1.0W
-- Active scanning: ~1.2-1.5W
-
-A standard USB power bank will run this for 10+ hours.
-
-## License
-
-MIT - Do whatever you want with it! 🚣
+Use the admin panel to simulate scans.
