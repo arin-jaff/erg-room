@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Who's In the Erg Room?
-Main entry point - starts scanner and web server.
+Who's In the Erg Room? (RFID Version)
+Main entry point - starts RFID scanner and web server.
 """
 
 import argparse
@@ -9,7 +9,7 @@ import signal
 import sys
 
 from app.web import create_app
-from app.scanner import stop_scanner
+from app.rfid_scanner import stop_scanner
 from app.config import WEB_HOST, WEB_PORT
 
 
@@ -21,11 +21,11 @@ def signal_handler(sig, frame):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Who's In the Erg Room?")
+    parser = argparse.ArgumentParser(description="Who's In the Erg Room? (RFID)")
     parser.add_argument(
-        "--no-camera", 
+        "--no-rfid", 
         action="store_true",
-        help="Run without camera (test mode)"
+        help="Run without RFID reader (test mode)"
     )
     parser.add_argument(
         "--debug",
@@ -46,15 +46,17 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     
     # Create and run app
-    use_camera = not args.no_camera
-    app = create_app(use_camera=use_camera)
+    use_rfid = not args.no_rfid
+    app = create_app(use_rfid=use_rfid)
     
     print(f"""
 ╔═══════════════════════════════════════════╗
-║     Who's In the Erg Room?                ║
+║     🚣 Who's In the Erg Room? 🚣          ║
+║           (RFID Version)                  ║
 ╠═══════════════════════════════════════════╣
 ║  Web UI:  http://{WEB_HOST}:{args.port:<5}              ║
 ║  Admin:   http://{WEB_HOST}:{args.port}/admin         ║
+║  RFID:    {"Enabled" if use_rfid else "Disabled (test mode)":<20}        ║
 ╚═══════════════════════════════════════════╝
     """)
     
