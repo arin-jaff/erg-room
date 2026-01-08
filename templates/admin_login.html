@@ -8,7 +8,11 @@
 </head>
 <body>
     <header>
-        <h1>Admin Login</h1>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Admin Login</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -19,11 +23,13 @@
         {% endif %}
     {% endwith %}
 
-    <form method="POST">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autofocus>
-        <button type="submit">Sign In</button>
-    </form>
+    <section>
+        <form method="POST">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autofocus>
+            <button type="submit">Sign In</button>
+        </form>
+    </section>
 
     <footer>
         <a href="/">← Back</a>

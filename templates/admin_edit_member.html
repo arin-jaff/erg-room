@@ -8,7 +8,11 @@
 </head>
 <body>
     <header>
-        <h1>Edit Member</h1>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Edit Member</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -19,30 +23,35 @@
         {% endif %}
     {% endwith %}
 
-    <div class="photo large">
-        {% if member.profile_picture %}
-        <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
-        {% else %}
-        {{ member.name[0] }}
-        {% endif %}
-    </div>
+    <section style="text-align:center">
+        <div class="photo large">
+            {% if member.profile_picture %}
+            <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+            {% else %}
+            {{ member.name[0] }}
+            {% endif %}
+        </div>
+    </section>
 
-    <form method="POST">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{ member.name }}" required>
+    <section>
+        <form method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ member.name }}" required>
 
-        <label for="uuid">UUID (Tag ID)</label>
-        <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
-        <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>
+            <label for="uuid">UUID (Tag ID)</label>
+            <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
+            <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>
 
-        <button type="submit">Save Changes</button>
-    </form>
-
-    <div class="danger">
-        <form method="POST" action="/admin/member/{{ member.id }}/delete" onsubmit="return confirm('Delete this member?')">
-            <button type="submit" class="btn-danger">Delete Member</button>
+            <button type="submit">Save Changes</button>
         </form>
-    </div>
+
+        <div class="danger">
+            <h2>Danger Zone</h2>
+            <form method="POST" action="/admin/member/{{ member.id }}/delete" onsubmit="return confirm('Delete this member?')">
+                <button type="submit" class="btn-danger">Delete Member</button>
+            </form>
+        </div>
+    </section>
 
     <footer>
         <a href="/admin">← Back to Admin</a>

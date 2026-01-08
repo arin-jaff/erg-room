@@ -23,12 +23,14 @@
         {% endif %}
     {% endwith %}
 
-    <form method="POST">
-        <label for="member_id">Your Tag ID</label>
-        <input type="text" id="member_id" name="member_id" placeholder="e.g. a1b2c3d4e5f6" required autofocus>
-        <button type="submit">Sign In</button>
-    </form>
-    <p class="hint">Your tag ID is shown when you scan</p>
+    <section>
+        <form method="POST">
+            <label for="member_id">Your Tag ID</label>
+            <input type="text" id="member_id" name="member_id" placeholder="e.g. a1b2c3d4e5f6" required autofocus>
+            <button type="submit">Sign In</button>
+        </form>
+        <p class="hint">Your tag ID is shown when you scan</p>
+    </section>
 
     <footer>
         <a href="/">← Back</a>

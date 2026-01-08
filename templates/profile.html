@@ -23,28 +23,32 @@
         {% endif %}
     {% endwith %}
 
-    <div class="photo large">
-        {% if member.profile_picture %}
-        <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
-        {% else %}
-        {{ member.name[0] }}
-        {% endif %}
-    </div>
+    <section style="text-align:center">
+        <div class="photo large">
+            {% if member.profile_picture %}
+            <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">
+            {% else %}
+            {{ member.name[0] }}
+            {% endif %}
+        </div>
 
-    <p style="text-align:center">
-        <strong>{{ member.name }}</strong><br>
-        <span class="status {% if member.is_present %}in{% endif %}">
-            {% if member.is_present %}IN{% else %}OUT{% endif %}
-        </span><br>
-        <code>{{ member.id }}</code>
-    </p>
+        <p>
+            <strong style="font-size:1.25rem">{{ member.name }}</strong><br>
+            <span class="status {% if member.is_present %}in{% endif %}" style="margin:0.5rem 0;display:inline-block">
+                {% if member.is_present %}IN{% else %}OUT{% endif %}
+            </span><br>
+            <code>{{ member.id }}</code>
+        </p>
+    </section>
 
-    <h2>Update Photo</h2>
-    <form method="POST" action="/profile/upload" enctype="multipart/form-data">
-        <input type="file" name="photo" accept="image/*" required>
-        <button type="submit">Upload</button>
-    </form>
-    <p class="hint">PNG, JPG, GIF, WebP (max 5MB)</p>
+    <section>
+        <h2>Update Photo</h2>
+        <form method="POST" action="/profile/upload" enctype="multipart/form-data">
+            <input type="file" name="photo" accept="image/*" required>
+            <button type="submit">Upload</button>
+        </form>
+        <p class="hint">PNG, JPG, GIF, WebP (max 5MB)</p>
+    </section>
 
     <footer>
         <a href="/">← Back</a>
