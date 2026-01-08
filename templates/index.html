@@ -7,211 +7,247 @@
     <script src="/static/htmx.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        /* AOL-style Scanner Chatbox */
+        /* Modern Scanner Chatbox */
         .scanner-chatbox {
             position: fixed;
-            bottom: 1rem;
-            right: 1rem;
+            bottom: 1.5rem;
+            right: 1.5rem;
             z-index: 100;
-            width: 280px;
-            max-height: 350px;
+            width: 320px;
+            max-height: 400px;
             display: flex;
             flex-direction: column;
-            border: 3px ridge #4499D9;
-            background: #FFFFFF;
-            font-size: 0.8rem;
+            border-radius: 1rem;
+            border: 1px solid var(--gray-200);
+            background: var(--white);
+            font-size: 0.875rem;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            overflow: hidden;
         }
-        
+
         .chatbox-header {
-            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
-            color: #FFFFFF;
-            padding: 0.4rem 0.6rem;
-            font-weight: bold;
-            font-size: 0.85rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            border-bottom: 2px ridge #4499D9;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .chatbox-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
         .chatbox-header .status-dot {
             width: 8px;
             height: 8px;
-            background: #0f0;
+            background: #10b981;
             border-radius: 50%;
-            animation: pulse-dot 2s infinite;
+            animation: pulse-dot 2s ease-in-out infinite;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            position: relative;
+            z-index: 1;
         }
-        
+
         @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(0.9);
+            }
         }
-        
+
         .chatbox-log {
             flex: 1;
             overflow-y: auto;
-            padding: 0.5rem;
-            background: #FFFFFF;
-            min-height: 150px;
-            max-height: 250px;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            min-height: 180px;
+            max-height: 280px;
             display: flex;
             flex-direction: column;
-            gap: 0.3rem;
+            gap: 0.5rem;
         }
-        
+
         .chatbox-log::-webkit-scrollbar {
-            width: 12px;
+            width: 8px;
         }
-        
+
         .chatbox-log::-webkit-scrollbar-track {
-            background: #e0e0e0;
-            border: 1px inset #ccc;
+            background: var(--gray-100);
+            border-radius: 1rem;
         }
-        
+
         .chatbox-log::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
-            border: 1px outset #5aaae6;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            border-radius: 1rem;
         }
-        
+
+        .chatbox-log::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
         .chat-message {
-            padding: 0.3rem 0.5rem;
-            border-radius: 0;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.5rem;
             animation: slideInMessage 0.3s ease;
             border-left: 3px solid;
-            background: rgba(68, 153, 217, 0.05);
+            background: var(--white);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
         }
-        
+
         .chat-message.in {
-            border-left-color: #0a0;
-            background: rgba(0, 170, 0, 0.1);
+            border-left-color: var(--success);
+            background: linear-gradient(90deg, var(--success-light) 0%, var(--white) 100%);
         }
-        
+
         .chat-message.out {
-            border-left-color: #a00;
-            background: rgba(170, 0, 0, 0.1);
+            border-left-color: var(--error);
+            background: linear-gradient(90deg, var(--error-light) 0%, var(--white) 100%);
         }
-        
+
         .chat-message.registered {
-            border-left-color: #4499D9;
-            background: rgba(68, 153, 217, 0.15);
+            border-left-color: var(--primary);
+            background: linear-gradient(90deg, rgba(68, 153, 217, 0.1) 0%, var(--white) 100%);
         }
-        
+
         @keyframes slideInMessage {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-8px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .chat-message .timestamp {
-            color: #888;
+            color: var(--gray-500);
             font-size: 0.7rem;
-            font-family: 'Courier New', monospace;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-weight: 500;
         }
-        
+
         .chat-message .content {
             display: flex;
             align-items: center;
-            gap: 0.3rem;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
         }
-        
+
         .chat-message .name {
-            font-weight: bold;
-            color: #4499D9;
+            font-weight: 600;
+            color: var(--gray-900);
         }
-        
+
         .chat-message .action-text {
-            color: #333;
+            color: var(--gray-600);
+            font-size: 0.85rem;
         }
-        
-        .chat-message.in .action-text {
-            color: #060;
+
+        .chat-message.in .name {
+            color: #065f46;
         }
-        
-        .chat-message.out .action-text {
-            color: #600;
+
+        .chat-message.out .name {
+            color: #991b1b;
         }
-        
+
+        .chat-message.registered .name {
+            color: var(--primary-dark);
+        }
+
         .chat-message .icon {
-            font-size: 1rem;
-        }
-        
-        .chatbox-empty {
-            color: #888;
-            text-align: center;
-            padding: 2rem 1rem;
-            font-style: italic;
-        }
-        
-        .chatbox-input {
-            background: #e8e8e8;
-            padding: 0.4rem 0.6rem;
-            border-top: 2px ridge #4499D9;
-            font-size: 0.75rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        
-        .chatbox-input .scan-icon {
             font-size: 1.1rem;
         }
-        
+
+        .chatbox-empty {
+            color: var(--gray-400);
+            text-align: center;
+            padding: 3rem 1rem;
+            font-style: italic;
+        }
+
+        .chatbox-input {
+            background: var(--white);
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--gray-200);
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chatbox-input .scan-icon {
+            font-size: 1.25rem;
+        }
+
         /* Flash effects for new messages */
         .scanner-chatbox.flash-in {
-            animation: chatFlashIn 0.5s ease;
+            animation: chatFlashIn 0.6s ease;
         }
-        
+
         .scanner-chatbox.flash-out {
-            animation: chatFlashOut 0.5s ease;
+            animation: chatFlashOut 0.6s ease;
         }
-        
+
         @keyframes chatFlashIn {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: 0 0 20px rgba(0, 170, 0, 0.6); }
+            0%, 100% { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+            50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3); }
         }
-        
+
         @keyframes chatFlashOut {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: 0 0 20px rgba(170, 0, 0, 0.6); }
+            0%, 100% { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6), 0 0 60px rgba(239, 68, 68, 0.3); }
         }
-        
+
         /* Present list updates */
         .member-grid {
             transition: all 0.3s ease;
         }
-        
+
         .member-item.new-checkin {
             animation: slideIn 0.4s ease;
         }
-        
+
         @keyframes slideIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(-10px); 
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
             }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
             }
         }
-        
+
         /* Responsive */
         @media (max-width: 480px) {
             .scanner-chatbox {
-                width: 240px;
-                bottom: 4rem;
-                right: 0.5rem;
+                width: 280px;
+                bottom: 5rem;
+                right: 1rem;
             }
-            
+
             .chatbox-log {
-                min-height: 120px;
-                max-height: 180px;
+                min-height: 140px;
+                max-height: 200px;
             }
         }
     </style>
