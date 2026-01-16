@@ -15,7 +15,8 @@ from app.models import (
     get_present_members, get_all_members, init_db,
     get_member_by_id, update_profile_picture, get_member_presence,
     get_pending_tags, create_member, delete_member, update_member,
-    update_member_uuid, remove_pending_tag
+    update_member_uuid, remove_pending_tag, set_lightweight_mode,
+    get_lightweight_mode
 )
 from app.rfid_scanner import (
     start_scanner, stop_scanner, simulate_scan, set_presence_callback, 
@@ -84,6 +85,12 @@ def api_scan_history():
     return jsonify(get_scan_history())
 
 
+@app.route("/api/lightweight_mode")
+def api_lightweight_mode():
+    """API endpoint returning lightweight mode status."""
+    return jsonify({"enabled": get_lightweight_mode()})
+
+
 # ============== User Login Routes ==============
 
 @app.route("/login", methods=["GET", "POST"])
@@ -130,19 +137,19 @@ def profile():
 
 @app.route("/profile/update", methods=["POST"])
 def update_profile():
-    """Handle profile updates (name only, not UUID)."""
+    """Handle profile updates."""
     if "member_id" not in session:
         return redirect(url_for("login"))
-    
-    name = request.form.get("name", "").strip()
-    
-    if name:
-        update_member(session["member_id"], name=name)
-        session["member_name"] = name
-        flash("Name updated!", "success")
-    else:
-        flash("Name cannot be empty", "error")
-    
+
+    rowing_category = request.form.get("rowing_category", "").strip()
+
+    if not rowing_category:
+        flash("Rowing category is required", "error")
+        return redirect(url_for("profile"))
+
+    update_member(session["member_id"], rowing_category=rowing_category)
+    flash("Category updated!", "success")
+
     return redirect(url_for("profile"))
 
 
@@ -214,7 +221,8 @@ def admin():
     members = get_all_members()
     pending = get_pending_tags()
     reg_mode = is_registration_mode()
-    return render_template("admin.html", members=members, pending=pending, registration_mode=reg_mode)
+    lw_mode = get_lightweight_mode()
+    return render_template("admin.html", members=members, pending=pending, registration_mode=reg_mode, lightweight_mode=lw_mode)
 
 
 @app.route("/admin/register/start", methods=["POST"])
@@ -245,22 +253,41 @@ def admin_simulate_registration():
     return redirect(url_for("admin"))
 
 
+@app.route("/admin/lightweight_mode/enable", methods=["POST"])
+@admin_required
+def admin_enable_lightweight_mode():
+    """Enable lightweight mode."""
+    set_lightweight_mode(True)
+    flash("Lightweight mode enabled. Home page will only show LM category.", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/lightweight_mode/disable", methods=["POST"])
+@admin_required
+def admin_disable_lightweight_mode():
+    """Disable lightweight mode."""
+    set_lightweight_mode(False)
+    flash("Lightweight mode disabled. Home page will show all categories.", "success")
+    return redirect(url_for("admin"))
+
+
 @app.route("/admin/member/create", methods=["POST"])
 @admin_required
 def admin_create_member():
     """Create a new member from a pending tag."""
     tag_id = request.form.get("tag_id", "").strip()
     name = request.form.get("name", "").strip()
-    
-    if not tag_id or not name:
-        flash("Tag ID and name are required", "error")
+    rowing_category = request.form.get("rowing_category", "").strip()
+
+    if not tag_id or not name or not rowing_category:
+        flash("All fields are required", "error")
         return redirect(url_for("admin"))
-    
-    if create_member(tag_id, name):
+
+    if create_member(tag_id, name, rowing_category):
         flash(f"Member '{name}' created successfully!", "success")
     else:
         flash("Failed to create member. Tag may already be registered.", "error")
-    
+
     return redirect(url_for("admin"))
 
 
@@ -275,18 +302,19 @@ def admin_edit_member(member_id):
     
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        rowing_category = request.form.get("rowing_category", "").strip()
         new_uuid = request.form.get("uuid", "").strip()
-        
-        if name:
-            update_member(member_id, name=name)
-        
+
+        if name and rowing_category:
+            update_member(member_id, name=name, rowing_category=rowing_category)
+
         if new_uuid and new_uuid != member_id:
             if update_member_uuid(member_id, new_uuid):
                 flash(f"UUID updated to {new_uuid}", "success")
                 return redirect(url_for("admin_edit_member", member_id=new_uuid))
             else:
                 flash("Failed to update UUID. It may already be in use.", "error")
-        
+
         flash("Member updated!", "success")
         return redirect(url_for("admin"))
     

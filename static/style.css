@@ -146,22 +146,26 @@ section {
 
 /* ===== FORMS ===== */
 
-input, button { 
-    padding: 0.5rem; 
-    font-size: 1rem; 
+input, button, select {
+    padding: 0.5rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
 }
 
-input { 
-    width: 100%; 
+input, select {
+    width: 100%;
     background: #FFFFFF;
     color: #333333;
     border: 2px inset #4499D9;
 }
 
-input:focus {
+input:focus, select:focus {
     outline: 2px solid #4499D9;
     background: #f0f8ff;
+}
+
+select {
+    cursor: pointer;
 }
 
 button { 
@@ -382,9 +386,36 @@ label {
     color: #4499D9;
 }
 
-.member-time { 
-    font-size: 0.75rem; 
-    color: #888; 
+.member-time {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+/* ===== ROWING CATEGORY TAG ===== */
+
+.rowing-category-tag {
+    display: inline-block;
+    background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
+    color: #FFFFFF;
+    padding: 0.2rem 0.5rem;
+    border: 2px outset #5aaae6;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin: 0.25rem 0;
+    text-shadow: 1px 1px #2d6a99;
+}
+
+/* ===== TEAM BADGE ===== */
+
+.team-badge {
+    display: inline-block;
+    background: rgba(68, 153, 217, 0.3);
+    color: #2d6a99;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid #4499D9;
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-left: 0.25rem;
 }
 
 /* ===== EMPTY STATE ===== */
@@ -592,6 +623,45 @@ label {
 
 .webring a {
     margin: 0 0.5rem;
+}
+
+/* ===== FILTER CONTROLS ===== */
+
+.filter-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-btn {
+    background: linear-gradient(180deg, #FFFFFF 0%, #e6e6e6 50%, #cccccc 100%);
+    color: #4499D9;
+    border: 2px outset #4499D9;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-shadow: none;
+    width: auto;
+    margin: 0;
+}
+
+.filter-btn:hover {
+    background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 50%, #c0c0c0 100%);
+    border-color: #2d6a99;
+}
+
+.filter-btn.active {
+    background: linear-gradient(180deg, #4499D9 0%, #3d8ac7 50%, #2d6a99 100%);
+    color: #FFFFFF;
+    border: 2px inset #5aaae6;
+    text-shadow: 1px 1px #2d6a99;
+}
+
+.filter-btn:active {
+    border-style: inset;
 }
 
 /* ===== RESPONSIVE ===== */

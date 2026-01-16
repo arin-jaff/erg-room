@@ -1,7 +1,7 @@
 {% if present %}
 <div class="member-grid">
     {% for member in present %}
-    <div class="member-item">
+    <div class="member-item" data-category="{{ member.rowing_category or 'unknown' }}">
         <div class="photo">
             {% if member.profile_picture %}
             <img src="/static/uploads/{{ member.profile_picture }}" alt="{{ member.name }}">

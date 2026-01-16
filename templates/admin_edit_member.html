@@ -31,6 +31,14 @@
         <label for="name">Name</label>
         <input type="text" id="name" name="name" value="{{ member.name }}" required>
 
+        <label for="rowing_category">Rowing Category</label>
+        <select id="rowing_category" name="rowing_category" required>
+            <option value="">Select Category</option>
+            <option value="LM" {% if member.rowing_category == "LM" %}selected{% endif %}>LM (Lightweight)</option>
+            <option value="M" {% if member.rowing_category == "M" %}selected{% endif %}>M (Heavyweight)</option>
+            <option value="W" {% if member.rowing_category == "W" %}selected{% endif %}>W (Women)</option>
+        </select>
+
         <label for="uuid">UUID (Tag ID)</label>
         <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
         <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>
