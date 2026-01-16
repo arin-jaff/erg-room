@@ -41,6 +41,22 @@
         {% endif %}
     </section>
 
+    <!-- Lightweight Mode -->
+    <section>
+        <h2>Lightweight Mode</h2>
+        <p class="hint">When enabled, the home page will only show lightweights (LM category) and hide the filter controls.</p>
+        {% if lightweight_mode %}
+        <div class="reg-active">🏋️ Lightweight Mode ON - Only showing LM</div>
+        <form method="POST" action="/admin/lightweight_mode/disable">
+            <button type="submit" class="btn-secondary">Disable Lightweight Mode</button>
+        </form>
+        {% else %}
+        <form method="POST" action="/admin/lightweight_mode/enable">
+            <button type="submit">Enable Lightweight Mode</button>
+        </form>
+        {% endif %}
+    </section>
+
     <!-- Pending Tags -->
     {% if pending %}
     <section>
@@ -55,6 +71,12 @@
         <form method="POST" action="/admin/member/create" class="inline-form">
             <input type="hidden" name="tag_id" value="{{ tag.id }}">
             <input type="text" name="name" placeholder="Name" required>
+            <select name="rowing_category" required>
+                <option value="">Select Category</option>
+                <option value="LM">LM (Lightweight)</option>
+                <option value="M">M (Heavyweight)</option>
+                <option value="W">W (Women)</option>
+            </select>
             <button type="submit">Create</button>
             <form method="POST" action="/admin/pending/{{ tag.id }}/delete" style="display:inline">
                 <button type="submit" class="btn-danger btn-small">×</button>

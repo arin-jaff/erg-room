@@ -26,6 +26,7 @@ def init_db():
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 profile_picture TEXT DEFAULT NULL,
+                rowing_category TEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -96,15 +97,15 @@ def remove_pending_tag(tag_id: str) -> bool:
         return cursor.rowcount > 0
 
 
-def create_member(member_id: str, name: str) -> bool:
+def create_member(member_id: str, name: str, rowing_category: str = None) -> bool:
     """Create a new member from a pending tag."""
     with get_db() as conn:
         cursor = conn.cursor()
         try:
             # Add to members
             cursor.execute(
-                "INSERT INTO members (id, name) VALUES (?, ?)",
-                (member_id, name)
+                "INSERT INTO members (id, name, rowing_category) VALUES (?, ?, ?)",
+                (member_id, name, rowing_category)
             )
             # Create presence record
             cursor.execute(
@@ -119,25 +120,29 @@ def create_member(member_id: str, name: str) -> bool:
             return False
 
 
-def update_member(member_id: str, name: str = None, profile_picture: str = None) -> bool:
+def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None) -> bool:
     """Update member details."""
     with get_db() as conn:
         cursor = conn.cursor()
-        
+
         updates = []
         params = []
-        
+
         if name is not None:
             updates.append("name = ?")
             params.append(name)
-        
+
         if profile_picture is not None:
             updates.append("profile_picture = ?")
             params.append(profile_picture)
-        
+
+        if rowing_category is not None:
+            updates.append("rowing_category = ?")
+            params.append(rowing_category)
+
         if not updates:
             return False
-        
+
         params.append(member_id)
         cursor.execute(
             f"UPDATE members SET {', '.join(updates)} WHERE id = ?",
@@ -179,9 +184,9 @@ def toggle_presence(member_id: str) -> dict | None:
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT m.id, m.name, m.profile_picture, p.is_present 
-            FROM members m 
-            JOIN presence p ON m.id = p.member_id 
+            SELECT m.id, m.name, m.profile_picture, m.rowing_category, p.is_present
+            FROM members m
+            JOIN presence p ON m.id = p.member_id
             WHERE m.id = ?
         """, (member_id,))
         
@@ -227,7 +232,7 @@ def get_present_members() -> list[dict]:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT m.id, m.name, m.profile_picture, p.last_scan, p.checked_in_at
+            SELECT m.id, m.name, m.profile_picture, m.rowing_category, p.last_scan, p.checked_in_at
             FROM members m
             JOIN presence p ON m.id = p.member_id
             WHERE p.is_present = 1
@@ -277,7 +282,7 @@ def get_all_members() -> list[dict]:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT m.id, m.name, m.profile_picture, p.is_present, p.last_scan, p.checked_in_at
+            SELECT m.id, m.name, m.profile_picture, m.rowing_category, p.is_present, p.last_scan, p.checked_in_at
             FROM members m
             JOIN presence p ON m.id = p.member_id
             ORDER BY m.name
@@ -305,7 +310,7 @@ def get_member_by_id(member_id: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, name, profile_picture FROM members WHERE id = ?", 
+            "SELECT id, name, profile_picture, rowing_category FROM members WHERE id = ?",
             (member_id,)
         )
         row = cursor.fetchone()
@@ -329,7 +334,7 @@ def get_member_presence(member_id: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT m.id, m.name, m.profile_picture, p.is_present, p.last_scan, p.checked_in_at
+            SELECT m.id, m.name, m.profile_picture, m.rowing_category, p.is_present, p.last_scan, p.checked_in_at
             FROM members m
             JOIN presence p ON m.id = p.member_id
             WHERE m.id = ?
@@ -352,6 +357,41 @@ def is_registered_member(tag_id: str) -> bool:
         cursor = conn.cursor()
         cursor.execute("SELECT 1 FROM members WHERE id = ?", (tag_id,))
         return cursor.fetchone() is not None
+
+
+def set_lightweight_mode(enabled: bool) -> bool:
+    """Set the lightweight mode state."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        # Create settings table if it doesn't exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        cursor.execute("""
+            INSERT OR REPLACE INTO settings (key, value)
+            VALUES ('lightweight_mode', ?)
+        """, ('1' if enabled else '0',))
+        conn.commit()
+        return True
+
+
+def get_lightweight_mode() -> bool:
+    """Get the lightweight mode state."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        # Create settings table if it doesn't exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        cursor.execute("SELECT value FROM settings WHERE key = 'lightweight_mode'")
+        row = cursor.fetchone()
+        return row and row[0] == '1' if row else False
 
 
 if __name__ == "__main__":
