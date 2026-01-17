@@ -10,7 +10,14 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.config import TEAM_MEMBERS
+# Hardcoded test team members
+TEAM_MEMBERS = [
+    {"id": "test001", "name": "Alice (LW)"},
+    {"id": "test002", "name": "Bob (HW)"},
+    {"id": "test003", "name": "Charlie (W)"},
+    {"id": "test004", "name": "Diana (LW)"},
+    {"id": "test005", "name": "Eve (HW)"},
+]
 
 
 def list_members():
