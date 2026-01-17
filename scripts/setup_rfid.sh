@@ -3,10 +3,10 @@
 
 set -e
 
-echo "🚣 Setting up Erg Room RFID Presence Tracker..."
+echo "Setting up Erg Room RFID Presence Tracker..."
 
 # Enable SPI if not already enabled
-echo "📡 Checking SPI..."
+echo "Checking SPI..."
 if ! lsmod | grep -q spi_bcm2835; then
     echo "Enabling SPI interface..."
     sudo raspi-config nonint do_spi 0
@@ -15,7 +15,7 @@ fi
 
 # Verify SPI is available
 if [ ! -e /dev/spidev0.0 ]; then
-    echo "⚠️  SPI device not found. Please reboot and run this script again."
+    echo "SPI device not found. Please reboot and run this script again."
     echo "   Run: sudo reboot"
     exit 1
 fi
@@ -23,11 +23,11 @@ fi
 echo "✓ SPI is enabled"
 
 # Update system
-echo "📦 Updating system packages..."
+echo "Updating system packages..."
 sudo apt update
 
 # Install system dependencies
-echo "📦 Installing system dependencies..."
+echo "Installing system dependencies..."
 sudo apt install -y \
     python3-pip \
     python3-venv \
@@ -35,19 +35,19 @@ sudo apt install -y \
     python3-rpi.gpio
 
 # Create virtual environment with system packages
-echo "🐍 Creating Python virtual environment..."
+echo "Creating Python virtual environment..."
 cd /home/arin/git/erg-room
 rm -rf venv
 python3 -m venv venv --system-site-packages
 source venv/bin/activate
 
 # Install Python dependencies
-echo "📦 Installing Python packages..."
+echo "Installing Python packages..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
 # Download HTMX
-echo "📥 Downloading HTMX..."
+echo "Downloading HTMX..."
 curl -sL https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js -o static/htmx.min.js
 
 # Initialize database
@@ -55,7 +55,7 @@ echo "🗃️  Initializing database..."
 python -c "from app.models import init_db; init_db()"
 
 echo ""
-echo "✅ Setup complete!"
+echo "Setup complete!"
 echo ""
 echo "RC522 Wiring (Pi Zero 2 W):"
 echo "  ┌─────────────┬─────────────┐"
