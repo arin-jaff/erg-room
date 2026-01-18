@@ -45,18 +45,10 @@ MOSI         GPIO 10
 MISO         GPIO 9
 RST          GPIO 25
 GND          Ground
-3.3V         3.3V (not 5V)
+3.3V         3.3V
 ```
 
 ## Usage
-
-### Registering a new tag
-
-1. Go to `/admin/login` and enter the admin password (default: `ergroom2024`)
-2. Click "Start Registration Mode"
-3. Tap a blank RFID tag on the reader
-4. The tag ID appears under "Pending Tags"
-5. Enter a name and click "Create"
 
 ### Checking in/out
 
@@ -67,14 +59,6 @@ Users tap their registered tag on the reader. The system toggles their status be
 Users can log in at `/login` with their tag ID to change their name or upload a profile picture. They cannot change their tag ID.
 
 Admins can edit any field including the tag ID at `/admin/member/<id>/edit`.
-
-## Configuration
-
-Edit `app/config.py`:
-
-- `ADMIN_PASSWORD` - password for admin panel
-- `AUTO_CHECKOUT_HOURS` - automatically check out users after this many hours (default: 5)
-- `DEBOUNCE_SECONDS` - ignore repeat scans within this window (default: 3)
 
 ## Endpoints
 
@@ -99,12 +83,16 @@ static/          - CSS and JS
 data/            - SQLite database (created at runtime)
 ```
 
-## Test mode
+## Running
 
-Run without RFID hardware:
+Run as normal:
+
+```bash
+python run.py
+```
+
+Run without RFID hardware (use the admin panel to simulate scans):
 
 ```bash
 python run.py --no-rfid
 ```
-
-Use the admin panel to simulate scans.
