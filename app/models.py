@@ -6,7 +6,6 @@ from app.config import DB_PATH, AUTO_CHECKOUT_HOURS
 
 @contextmanager
 def get_db():
-    """Context manager for database connections."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
@@ -16,11 +15,9 @@ def get_db():
 
 
 def init_db():
-    """Initialize database tables."""
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # Team members table (with profile picture)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS members (
                 id TEXT PRIMARY KEY,
@@ -30,8 +27,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Presence status table
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS presence (
                 member_id TEXT PRIMARY KEY,
@@ -41,8 +37,7 @@ def init_db():
                 FOREIGN KEY (member_id) REFERENCES members(id)
             )
         """)
-        
-        # Scan history log
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scan_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,8 +47,7 @@ def init_db():
                 FOREIGN KEY (member_id) REFERENCES members(id)
             )
         """)
-        
-        # Pending registrations (tags written but not yet assigned to a user)
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS pending_tags (
                 id TEXT PRIMARY KEY,
@@ -66,7 +60,6 @@ def init_db():
 
 
 def add_pending_tag(tag_id: str) -> bool:
-    """Add a newly written tag to pending registrations."""
     with get_db() as conn:
         cursor = conn.cursor()
         try:
@@ -77,11 +70,10 @@ def add_pending_tag(tag_id: str) -> bool:
             conn.commit()
             return True
         except sqlite3.IntegrityError:
-            return False  # Already exists
+            return False
 
 
 def get_pending_tags() -> list[dict]:
-    """Get all pending tag registrations."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, created_at FROM pending_tags ORDER BY created_at DESC")
@@ -89,7 +81,6 @@ def get_pending_tags() -> list[dict]:
 
 
 def remove_pending_tag(tag_id: str) -> bool:
-    """Remove a tag from pending registrations."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM pending_tags WHERE id = ?", (tag_id,))
@@ -98,21 +89,17 @@ def remove_pending_tag(tag_id: str) -> bool:
 
 
 def create_member(member_id: str, name: str, rowing_category: str = None) -> bool:
-    """Create a new member from a pending tag."""
     with get_db() as conn:
         cursor = conn.cursor()
         try:
-            # Add to members
             cursor.execute(
                 "INSERT INTO members (id, name, rowing_category) VALUES (?, ?, ?)",
                 (member_id, name, rowing_category)
             )
-            # Create presence record
             cursor.execute(
                 "INSERT INTO presence (member_id, is_present) VALUES (?, 0)",
                 (member_id,)
             )
-            # Remove from pending
             cursor.execute("DELETE FROM pending_tags WHERE id = ?", (member_id,))
             conn.commit()
             return True
@@ -121,7 +108,6 @@ def create_member(member_id: str, name: str, rowing_category: str = None) -> boo
 
 
 def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None) -> bool:
-    """Update member details."""
     with get_db() as conn:
         cursor = conn.cursor()
 
@@ -153,7 +139,6 @@ def update_member(member_id: str, name: str = None, profile_picture: str = None,
 
 
 def delete_member(member_id: str) -> bool:
-    """Delete a member and their presence record."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM presence WHERE member_id = ?", (member_id,))
@@ -164,11 +149,9 @@ def delete_member(member_id: str) -> bool:
 
 
 def update_member_uuid(old_id: str, new_id: str) -> bool:
-    """Update a member's UUID (admin only)."""
     with get_db() as conn:
         cursor = conn.cursor()
         try:
-            # Update in order to maintain foreign key relationships
             cursor.execute("UPDATE scan_log SET member_id = ? WHERE member_id = ?", (new_id, old_id))
             cursor.execute("UPDATE presence SET member_id = ? WHERE member_id = ?", (new_id, old_id))
             cursor.execute("UPDATE members SET id = ? WHERE id = ?", (new_id, old_id))
@@ -179,7 +162,6 @@ def update_member_uuid(old_id: str, new_id: str) -> bool:
 
 
 def toggle_presence(member_id: str) -> dict | None:
-    """Toggle a member's presence status."""
     with get_db() as conn:
         cursor = conn.cursor()
         
@@ -228,7 +210,6 @@ def toggle_presence(member_id: str) -> dict | None:
 
 
 def get_present_members() -> list[dict]:
-    """Get all members currently marked as present with time info."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -260,7 +241,6 @@ def get_present_members() -> list[dict]:
 
 
 def format_duration(duration: timedelta) -> str:
-    """Format a timedelta into human-readable string."""
     total_seconds = int(duration.total_seconds())
     
     if total_seconds < 60:
@@ -278,7 +258,6 @@ def format_duration(duration: timedelta) -> str:
 
 
 def get_all_members() -> list[dict]:
-    """Get all team members with their presence status."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -291,7 +270,6 @@ def get_all_members() -> list[dict]:
 
 
 def auto_checkout_stale():
-    """Mark members as 'out' if checked in too long."""
     cutoff = datetime.now() - timedelta(hours=AUTO_CHECKOUT_HOURS)
     with get_db() as conn:
         cursor = conn.cursor()
@@ -306,7 +284,6 @@ def auto_checkout_stale():
 
 
 def get_member_by_id(member_id: str) -> dict | None:
-    """Look up a member by their ID."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -318,7 +295,6 @@ def get_member_by_id(member_id: str) -> dict | None:
 
 
 def update_profile_picture(member_id: str, filename: str) -> bool:
-    """Update a member's profile picture."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -330,7 +306,6 @@ def update_profile_picture(member_id: str, filename: str) -> bool:
 
 
 def get_member_presence(member_id: str) -> dict | None:
-    """Get a member's full info including presence status."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -344,7 +319,6 @@ def get_member_presence(member_id: str) -> dict | None:
 
 
 def is_pending_tag(tag_id: str) -> bool:
-    """Check if a tag ID is in pending registrations."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT 1 FROM pending_tags WHERE id = ?", (tag_id,))
@@ -352,7 +326,6 @@ def is_pending_tag(tag_id: str) -> bool:
 
 
 def is_registered_member(tag_id: str) -> bool:
-    """Check if a tag ID belongs to a registered member."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT 1 FROM members WHERE id = ?", (tag_id,))
@@ -360,10 +333,8 @@ def is_registered_member(tag_id: str) -> bool:
 
 
 def set_lightweight_mode(enabled: bool) -> bool:
-    """Set the lightweight mode state."""
     with get_db() as conn:
         cursor = conn.cursor()
-        # Create settings table if it doesn't exist
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -379,10 +350,8 @@ def set_lightweight_mode(enabled: bool) -> bool:
 
 
 def get_lightweight_mode() -> bool:
-    """Get the lightweight mode state."""
     with get_db() as conn:
         cursor = conn.cursor()
-        # Create settings table if it doesn't exist
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,

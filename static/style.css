@@ -1,8 +1,8 @@
-/* ================================================
-   Who's In the Erg Room? - RETRO GEOCITIES EDITION
-   🦁 Columbia Lightweight Rowing 🦁
-   Columbia Blue (#4499D9) & White Theme
-   ================================================ */
+/*
+   Erg Room Attendance Tracker
+   Columbia Lightweight Rowing
+   Primary: Columbia Blue (#4499D9)
+*/
 
    * {
     box-sizing: border-box;
@@ -25,7 +25,7 @@ body {
     min-height: 100vh;
 }
 
-/* Semi-transparent overlay for lion pattern */
+/* Overlay to reduce opacity of repeating background pattern */
 body::before {
     content: '';
     position: fixed;
@@ -38,7 +38,7 @@ body::before {
     z-index: -1;
 }
 
-/* ===== TYPOGRAPHY ===== */
+/* TYPOGRAPHY */
 
 h1 { 
     font-size: 1.8rem; 
@@ -76,7 +76,7 @@ code {
     border: 1px solid #2d6a99;
 }
 
-/* ===== LAYOUT ===== */
+/* LAYOUT */
 
 header { 
     border: 3px ridge #4499D9;
@@ -139,7 +139,7 @@ section {
     padding: 1rem;
 }
 
-/* ===== FORMS ===== */
+/* FORMS */
 
 input, button, select {
     padding: 0.5rem;
@@ -212,7 +212,7 @@ label {
     color: #4499D9;
 }
 
-/* ===== FLASH MESSAGES ===== */
+/* FLASH MESSAGES */
 
 .flash { 
     padding: 0.5rem; 
@@ -232,7 +232,7 @@ label {
     border-color: #0a0;
 }
 
-/* ===== CARDS ===== */
+/* CARDS */
 
 .card {
     border: 2px ridge #4499D9;
@@ -249,7 +249,7 @@ label {
     box-shadow: 0 0 10px rgba(0, 170, 0, 0.5);
 }
 
-/* ===== PHOTOS ===== */
+/* PHOTOS */
 
 .photo {
     width: 50px;
@@ -278,7 +278,7 @@ label {
     margin: 0 auto 1rem; 
 }
 
-/* ===== STATUS ===== */
+/* STATUS */
 
 .status { 
     font-size: 0.75rem; 
@@ -301,7 +301,7 @@ label {
     50%, 100% { opacity: 0.7; }
 }
 
-/* ===== SCAN DISPLAY ===== */
+/* SCAN DISPLAY */
 
 .scan-box {
     text-align: center;
@@ -347,7 +347,7 @@ label {
     color: #666; 
 }
 
-/* ===== MEMBER GRID ===== */
+/* MEMBER GRID */
 
 .member-grid { 
     display: flex; 
@@ -386,7 +386,7 @@ label {
     color: #888;
 }
 
-/* ===== ROWING CATEGORY TAG ===== */
+/* ROWING CATEGORY TAG */
 
 .rowing-category-tag {
     display: inline-block;
@@ -400,7 +400,7 @@ label {
     text-shadow: 1px 1px #2d6a99;
 }
 
-/* ===== TEAM BADGE ===== */
+/* TEAM BADGE */
 
 .team-badge {
     display: inline-block;
@@ -413,7 +413,7 @@ label {
     margin-left: 0.25rem;
 }
 
-/* ===== EMPTY STATE ===== */
+/* EMPTY STATE */
 
 .empty { 
     text-align: center; 
@@ -423,14 +423,14 @@ label {
     border: 2px dashed #ccc;
 }
 
-/* ===== HINT TEXT ===== */
+/* HINT TEXT */
 
 .hint { 
     font-size: 0.8rem; 
     color: #888; 
 }
 
-/* ===== INLINE FORM ===== */
+/* INLINE FORM */
 
 .inline-form { 
     display: flex; 
@@ -440,7 +440,7 @@ label {
 .inline-form input { margin-bottom: 0; }
 .inline-form button { width: auto; }
 
-/* ===== REGISTRATION ACTIVE ===== */
+/* REGISTRATION ACTIVE */
 
 .reg-active { 
     background: linear-gradient(90deg, #3d8ac7 0%, #4499D9 50%, #3d8ac7 100%);
@@ -460,7 +460,7 @@ label {
     100% { background-position: -100% 0; }
 }
 
-/* ===== DANGER ZONE ===== */
+/* DANGER ZONE */
 
 .danger { 
     margin-top: 2rem; 
@@ -473,7 +473,7 @@ label {
     text-shadow: 1px 1px #fee;
 }
 
-/* ===== SCANNER CORNER WIDGET ===== */
+/* SCANNER CORNER WIDGET */
 
 .scanner-widget {
     position: fixed;
@@ -558,7 +558,7 @@ label {
 .scanner-mini .action.out { color: #ffaaaa; }
 .scanner-mini .action.registered { color: #FFFFFF; }
 
-/* ===== MARQUEE STYLE HEADER (optional fun) ===== */
+/* MARQUEE HEADER */
 
 .marquee {
     overflow: hidden;
@@ -575,7 +575,7 @@ label {
     100% { transform: translateX(-100%); }
 }
 
-/* ===== VISITOR COUNTER STYLE ===== */
+/* VISITOR COUNTER */
 
 .counter {
     font-family: 'Courier New', monospace;
@@ -586,7 +586,7 @@ label {
     display: inline-block;
 }
 
-/* ===== UNDER CONSTRUCTION BANNER ===== */
+/* UNDER CONSTRUCTION BANNER */
 
 .construction {
     background: repeating-linear-gradient(
@@ -608,7 +608,7 @@ label {
     font-weight: bold;
 }
 
-/* ===== GUESTBOOK LINK STYLE ===== */
+/* WEBRING LINKS */
 
 .webring {
     text-align: center;
@@ -620,7 +620,7 @@ label {
     margin: 0 0.5rem;
 }
 
-/* ===== FILTER CONTROLS ===== */
+/* FILTER CONTROLS */
 
 .filter-controls {
     display: flex;
@@ -659,7 +659,7 @@ label {
     border-style: inset;
 }
 
-/* ===== RESPONSIVE ===== */
+/* RESPONSIVE */
 
 @media (max-width: 480px) {
     body {

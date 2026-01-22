@@ -8,7 +8,7 @@
     <script src="/static/htmx.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        /* AOL-style Scanner Chatbox */
+        /* Scanner Chatbox */
         .scanner-chatbox {
             position: fixed;
             bottom: 1rem;
@@ -184,7 +184,7 @@
             font-size: 1.1rem;
         }
 
-        /* Flash effects for new messages */
+        /* Flash effects on scan */
         .scanner-chatbox.flash-in {
             animation: chatFlashIn 0.5s ease;
         }
@@ -203,7 +203,7 @@
             50% { box-shadow: 0 0 20px rgba(170, 0, 0, 0.6); }
         }
 
-        /* Present list updates */
+        /* Member list animations */
         .member-grid {
             transition: all 0.3s ease;
         }
@@ -223,7 +223,7 @@
             }
         }
 
-        /* Responsive - small screens */
+        /* Small screens */
         @media (max-width: 480px) {
             .scanner-chatbox {
                 width: clamp(160px, 45vw, 220px);
@@ -257,7 +257,7 @@
             }
         }
 
-        /* Responsive - large screens */
+        /* Large screens */
         @media (min-width: 1200px) {
             .scanner-chatbox {
                 width: 320px;
@@ -281,7 +281,6 @@
     <section>
         <h2>Currently Here <span id="present-count">({{ present|length }})</span></h2>
 
-        <!-- Filter Buttons -->
         <div id="filter-controls" class="filter-controls">
             <button class="filter-btn active" data-category="all">All</button>
             <button class="filter-btn" data-category="LM">Lightweight</button>
@@ -294,7 +293,6 @@
         </div>
     </section>
 
-    <!-- AOL-style Scanner Chatbox -->
     <div id="scanner-chatbox" class="scanner-chatbox collapsed">
         <div class="chatbox-header" onclick="toggleChatbox()">
             <span class="status-dot"></span>
@@ -328,47 +326,39 @@
     </footer>
 
     <script>
-        // Track last scan timestamp to detect new scans
         let lastScanTimestamp = null;
-        let pollInterval = 2000; // Check every 2 seconds
+        let pollInterval = 2000;
         let currentFilter = 'all';
         let lightweightMode = false;
 
-        // Toggle chatbox expand/collapse
         function toggleChatbox() {
             const chatbox = document.getElementById('scanner-chatbox');
             chatbox.classList.toggle('collapsed');
             localStorage.setItem('chatboxCollapsed', chatbox.classList.contains('collapsed'));
         }
-        
-        // Format timestamp for display
+
         function formatTime(isoTimestamp) {
             if (!isoTimestamp) return '';
             return isoTimestamp.substring(11, 19);
         }
-        
-        // Poll for scan updates
+
         async function checkForScans() {
             try {
                 const response = await fetch('/api/scan_history');
                 const history = await response.json();
-                
+
                 if (history.length > 0) {
                     const latestTimestamp = history[0].timestamp;
-                    
-                    // Check if this is a new scan
+
                     if (latestTimestamp !== lastScanTimestamp) {
                         const isNewScan = lastScanTimestamp !== null;
                         lastScanTimestamp = latestTimestamp;
-                        
-                        // Update the chatbox
+
                         updateChatbox(history);
-                        
-                        // Flash animation for new scans
+
                         if (isNewScan) {
                             flashChatbox(history[0].action);
-                            
-                            // Refresh present list if check in/out
+
                             if (history[0].action === 'in' || history[0].action === 'out') {
                                 refreshPresentList();
                             }
@@ -379,22 +369,21 @@
                 console.error('Error checking for scans:', error);
             }
         }
-        
-        // Update the chatbox with history
+
         function updateChatbox(history) {
             const chatLog = document.getElementById('chatbox-log');
-            
+
             if (history.length === 0) {
                 chatLog.innerHTML = '<div class="chatbox-empty">No activity yet...<br>Tap your tag to check in!</div>';
                 return;
             }
-            
+
             let html = '';
             for (const scan of history) {
                 const icon = scan.action === 'in' ? '→' : (scan.action === 'out' ? '←' : '✨');
                 const actionText = scan.action === 'in' ? 'checked in' : (scan.action === 'out' ? 'checked out' : 'registered');
                 const name = scan.member_name || 'Unknown';
-                
+
                 html += `
                     <div class="chat-message ${scan.action}">
                         <div class="timestamp">${formatTime(scan.timestamp)}</div>
@@ -406,34 +395,29 @@
                     </div>
                 `;
             }
-            
+
             chatLog.innerHTML = html;
         }
-        
-        // Flash the chatbox for new scans
+
         function flashChatbox(action) {
             const chatbox = document.getElementById('scanner-chatbox');
-            
-            // Remove existing flash classes
+
             chatbox.classList.remove('flash-in', 'flash-out');
-            
-            // Trigger reflow to restart animation
+
+            // Force reflow to restart CSS animation
             void chatbox.offsetWidth;
-            
-            // Add appropriate flash class
+
             if (action === 'in') {
                 chatbox.classList.add('flash-in');
             } else if (action === 'out') {
                 chatbox.classList.add('flash-out');
             }
-            
-            // Remove flash class after animation
+
             setTimeout(() => {
                 chatbox.classList.remove('flash-in', 'flash-out');
             }, 500);
         }
-        
-        // Refresh the present list
+
         async function refreshPresentList() {
             try {
                 const response = await fetch('/fragment/present-list');
@@ -442,12 +426,10 @@
                 const presentList = document.getElementById('present-list');
                 presentList.innerHTML = html;
 
-                // Update count
                 const countResponse = await fetch('/api/present');
                 const countData = await countResponse.json();
                 document.getElementById('present-count').textContent = `(${countData.count})`;
 
-                // Reapply current filter
                 if (lightweightMode) {
                     applyFilter('LM');
                 } else if (currentFilter !== 'all') {
@@ -458,8 +440,7 @@
                 console.error('Error refreshing present list:', error);
             }
         }
-        
-        // Filter functionality
+
         function applyFilter(category) {
             const members = document.querySelectorAll('.member-item');
             const emptyState = document.querySelector('.empty');
@@ -475,13 +456,11 @@
                 }
             });
 
-            // Update active button
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.querySelector(`[data-category="${category}"]`).classList.add('active');
 
-            // Show/hide empty state
             if (emptyState) {
                 emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
             }
@@ -489,14 +468,12 @@
             currentFilter = category;
         }
 
-        // Check lightweight mode status
         async function checkLightweightMode() {
             try {
                 const response = await fetch('/api/lightweight_mode');
                 const data = await response.json();
                 lightweightMode = data.enabled;
 
-                // Hide filter controls if lightweight mode is on
                 const filterControls = document.getElementById('filter-controls');
                 if (filterControls) {
                     if (lightweightMode) {
@@ -511,28 +488,19 @@
             }
         }
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Restore chatbox collapsed state from localStorage
             const chatbox = document.getElementById('scanner-chatbox');
             const wasCollapsed = localStorage.getItem('chatboxCollapsed');
             if (wasCollapsed === 'false') {
                 chatbox.classList.remove('collapsed');
             }
 
-            // Get initial scan state
             checkForScans();
-
-            // Check lightweight mode
             checkLightweightMode();
 
-            // Start polling
             setInterval(checkForScans, pollInterval);
-
-            // Also refresh present list periodically (less frequently)
             setInterval(refreshPresentList, 10000);
 
-            // Setup filter buttons
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     if (!lightweightMode) {
