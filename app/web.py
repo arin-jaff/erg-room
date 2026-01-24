@@ -12,7 +12,7 @@ from app.models import (
     get_pending_tags, create_member, delete_member, update_member,
     update_member_uuid, remove_pending_tag, set_lightweight_mode,
     get_lightweight_mode, get_leaderboard_stats, get_all_tables,
-    get_table_data, update_table_row
+    get_table_data, update_table_row, auto_checkout_stale
 )
 from app.rfid_scanner import (
     start_scanner, stop_scanner, simulate_scan, set_presence_callback,
@@ -492,6 +492,9 @@ def fragment_scan_status():
 
 def create_app(use_rfid: bool = True):
     init_db()
+    stale = auto_checkout_stale()
+    if stale:
+        print(f"Auto-checked out {stale} stale members from previous session")
     set_presence_callback(notify_clients)
     start_scanner(use_rfid=use_rfid)
     return app

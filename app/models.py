@@ -8,6 +8,8 @@ from app.config import DB_PATH, AUTO_CHECKOUT_HOURS
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=FULL")
     try:
         yield conn
     finally:
@@ -58,6 +60,7 @@ def init_db():
         """)
 
         migrate_db(conn)
+        repair_presence(conn)
         conn.commit()
         print(f"Database initialized at {DB_PATH}")
 
@@ -73,6 +76,18 @@ def migrate_db(conn):
 
     if 'total_seconds' not in columns:
         cursor.execute("ALTER TABLE members ADD COLUMN total_seconds INTEGER DEFAULT 0")
+
+
+def repair_presence(conn):
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR IGNORE INTO presence (member_id, is_present)
+        SELECT id, 0 FROM members
+        WHERE id NOT IN (SELECT member_id FROM presence)
+    """)
+    repaired = cursor.rowcount
+    if repaired > 0:
+        print(f"Repaired {repaired} members missing presence records")
 
 
 def add_pending_tag(tag_id: str) -> bool:
@@ -306,13 +321,26 @@ def auto_checkout_stale():
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
+            SELECT member_id, checked_in_at FROM presence
+            WHERE is_present = 1 AND checked_in_at < ?
+        """, (cutoff,))
+        stale = cursor.fetchall()
+
+        for row in stale:
+            checked_in = datetime.fromisoformat(row["checked_in_at"])
+            session_seconds = int((cutoff - checked_in).total_seconds())
+            cursor.execute(
+                "UPDATE members SET total_seconds = total_seconds + ? WHERE id = ?",
+                (session_seconds, row["member_id"])
+            )
+
+        cursor.execute("""
             UPDATE presence
             SET is_present = 0, checked_in_at = NULL
             WHERE is_present = 1 AND checked_in_at < ?
         """, (cutoff,))
-        affected = cursor.rowcount
         conn.commit()
-        return affected
+        return len(stale)
 
 
 def get_member_by_id(member_id: str) -> dict | None:
