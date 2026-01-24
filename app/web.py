@@ -50,8 +50,7 @@ def index():
     present = get_present_members()
     last_scan = get_last_scan_info()
     history = get_scan_history()
-    stats = get_leaderboard_stats()
-    return render_template("index.html", present=present, last_scan=last_scan, scan_history=history, stats=stats)
+    return render_template("index.html", present=present, last_scan=last_scan, scan_history=history)
 
 
 @app.route("/api/present")
@@ -320,9 +319,24 @@ def api_simulate(member_id: str):
     return jsonify({"success": False, "error": "Member not found"}), 404
 
 
+@app.route("/members")
+def members_directory():
+    members = get_all_members()
+    return render_template("members.html", members=members)
+
+
+@app.route("/members/<member_id>")
+def member_profile(member_id):
+    member = get_member_by_id(member_id)
+    if not member:
+        return redirect(url_for("members_directory"))
+    return render_template("member_profile.html", member=member)
+
+
 @app.route("/leaderboard")
 def leaderboard():
-    return redirect(url_for("index"))
+    stats = get_leaderboard_stats()
+    return render_template("leaderboard.html", stats=stats)
 
 
 @app.route("/admin/device")

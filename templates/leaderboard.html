@@ -91,9 +91,20 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-grid-wide {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
+        }
+
+        .stats-grid-wide .stat-card .stat-value {
+            font-size: 2.5rem;
         }
 
         .stat-card {
@@ -231,16 +242,6 @@
     <div class="leaderboard-container">
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>Total Hours</h3>
-                <div class="stat-value">{{ "%.1f"|format(stats.total_seconds / 3600) }}</div>
-                <div class="stat-sub">across all rowers</div>
-            </div>
-            <div class="stat-card">
-                <h3>Active Members</h3>
-                <div class="stat-value">{{ stats.member_count }}</div>
-                <div class="stat-sub">registered</div>
-            </div>
-            <div class="stat-card">
                 <h3>1V Hours</h3>
                 <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('1V', {}).get('total_seconds', 0)) / 3600) }}</div>
                 <div class="stat-sub">{{ stats.boat_stats.get('1V', {}).get('member_count', 0) }} rowers</div>
@@ -249,6 +250,23 @@
                 <h3>2V Hours</h3>
                 <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('2V', {}).get('total_seconds', 0)) / 3600) }}</div>
                 <div class="stat-sub">{{ stats.boat_stats.get('2V', {}).get('member_count', 0) }} rowers</div>
+            </div>
+            <div class="stat-card">
+                <h3>3V+ Hours</h3>
+                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('3V+', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <div class="stat-sub">{{ stats.boat_stats.get('3V+', {}).get('member_count', 0) }} rowers</div>
+            </div>
+        </div>
+        <div class="stats-grid-wide">
+            <div class="stat-card">
+                <h3>Total Hours</h3>
+                <div class="stat-value">{{ "%.1f"|format(stats.total_seconds / 3600) }}</div>
+                <div class="stat-sub">across all rowers</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Members</h3>
+                <div class="stat-value">{{ stats.member_count }}</div>
+                <div class="stat-sub">registered</div>
             </div>
         </div>
 
