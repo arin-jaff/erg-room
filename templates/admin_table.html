@@ -225,7 +225,7 @@
                 {% for row in data.rows %}
                 <tr>
                     <td>
-                        <button class="edit-btn" onclick="openEditModal({{ row|tojson|e }})">Edit</button>
+                        <button class="edit-btn" onclick='openEditModal({{ row|tojson }})'>Edit</button>
                     </td>
                     {% for col in data.columns %}
                     <td title="{{ row[col] }}">{{ row[col] }}</td>
