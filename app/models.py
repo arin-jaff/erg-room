@@ -123,7 +123,10 @@ def create_member(member_id: str, name: str, rowing_category: str = None, boat_c
             return False
 
 
-def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class: str = None) -> bool:
+_UNSET = object()
+
+
+def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class=_UNSET) -> bool:
     with get_db() as conn:
         cursor = conn.cursor()
 
@@ -142,7 +145,7 @@ def update_member(member_id: str, name: str = None, profile_picture: str = None,
             updates.append("rowing_category = ?")
             params.append(rowing_category)
 
-        if boat_class is not None:
+        if boat_class is not _UNSET:
             updates.append("boat_class = ?")
             params.append(boat_class)
 

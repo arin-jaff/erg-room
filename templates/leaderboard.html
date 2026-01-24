@@ -242,25 +242,25 @@
     <div class="leaderboard-container">
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>1V Hours</h3>
-                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('1V', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <h3>1V</h3>
+                <div class="stat-value">{{ stats.boat_stats.get('1V', {}).get('total_seconds', 0)|fmt_hours }}</div>
                 <div class="stat-sub">{{ stats.boat_stats.get('1V', {}).get('member_count', 0) }} rowers</div>
             </div>
             <div class="stat-card">
-                <h3>2V Hours</h3>
-                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('2V', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <h3>2V</h3>
+                <div class="stat-value">{{ stats.boat_stats.get('2V', {}).get('total_seconds', 0)|fmt_hours }}</div>
                 <div class="stat-sub">{{ stats.boat_stats.get('2V', {}).get('member_count', 0) }} rowers</div>
             </div>
             <div class="stat-card">
-                <h3>3V+ Hours</h3>
-                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('3V+', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <h3>3V+</h3>
+                <div class="stat-value">{{ stats.boat_stats.get('3V+', {}).get('total_seconds', 0)|fmt_hours }}</div>
                 <div class="stat-sub">{{ stats.boat_stats.get('3V+', {}).get('member_count', 0) }} rowers</div>
             </div>
         </div>
         <div class="stats-grid-wide">
             <div class="stat-card">
-                <h3>Total Hours</h3>
-                <div class="stat-value">{{ "%.1f"|format(stats.total_seconds / 3600) }}</div>
+                <h3>Total Time</h3>
+                <div class="stat-value">{{ stats.total_seconds|fmt_hours }}</div>
                 <div class="stat-sub">across all rowers</div>
             </div>
             <div class="stat-card">
@@ -281,17 +281,17 @@
 
                 <div class="lane">
                     <div class="boat boat-1v" style="left: {{ ((stats.boat_stats.get('1V', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
-                        <span class="boat-label">1V: {{ "%.1f"|format(stats.boat_stats.get('1V', {}).get('total_seconds', 0) / 3600) }}h</span>
+                        <span class="boat-label">1V: {{ stats.boat_stats.get('1V', {}).get('total_seconds', 0)|fmt_hours }}</span>
                     </div>
                 </div>
                 <div class="lane">
                     <div class="boat boat-2v" style="left: {{ ((stats.boat_stats.get('2V', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
-                        <span class="boat-label">2V: {{ "%.1f"|format(stats.boat_stats.get('2V', {}).get('total_seconds', 0) / 3600) }}h</span>
+                        <span class="boat-label">2V: {{ stats.boat_stats.get('2V', {}).get('total_seconds', 0)|fmt_hours }}</span>
                     </div>
                 </div>
                 <div class="lane">
                     <div class="boat boat-3v" style="left: {{ ((stats.boat_stats.get('3V+', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
-                        <span class="boat-label">3V+: {{ "%.1f"|format(stats.boat_stats.get('3V+', {}).get('total_seconds', 0) / 3600) }}h</span>
+                        <span class="boat-label">3V+: {{ stats.boat_stats.get('3V+', {}).get('total_seconds', 0)|fmt_hours }}</span>
                     </div>
                 </div>
                 <div class="finish-line"></div>
@@ -324,7 +324,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="rower-hours">{{ "%.1f"|format(rower.total_seconds / 3600) }}h</div>
+                    <div class="rower-hours">{{ rower.total_seconds|fmt_hours }}</div>
                 </div>
                 {% endfor %}
             {% else %}

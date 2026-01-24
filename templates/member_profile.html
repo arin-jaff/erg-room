@@ -117,8 +117,8 @@
 
     <div class="profile-stats">
         <div class="profile-stat">
-            <div class="value">{{ "%.1f"|format(member.total_seconds / 3600) }}</div>
-            <div class="label">Total Hours</div>
+            <div class="value">{{ member.total_seconds|fmt_hours }}</div>
+            <div class="label">Total Time</div>
         </div>
         <div class="profile-stat">
             <div class="value">{{ member.rowing_category or '-' }}</div>

@@ -27,6 +27,16 @@ app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 
+@app.template_filter('fmt_hours')
+def fmt_hours_filter(seconds):
+    seconds = int(seconds or 0)
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    if hours == 0:
+        return f"{minutes}m"
+    return f"{hours}h {minutes}m"
+
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -269,11 +279,11 @@ def admin_edit_member(member_id):
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         rowing_category = request.form.get("rowing_category", "").strip()
-        boat_class = request.form.get("boat_class", "").strip() or None
+        boat_class_raw = request.form.get("boat_class", "").strip()
         new_uuid = request.form.get("uuid", "").strip()
 
         if name and rowing_category:
-            update_member(member_id, name=name, rowing_category=rowing_category, boat_class=boat_class)
+            update_member(member_id, name=name, rowing_category=rowing_category, boat_class=boat_class_raw or None)
 
         if new_uuid and new_uuid != member_id:
             if update_member_uuid(member_id, new_uuid):
