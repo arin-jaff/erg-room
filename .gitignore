@@ -6,3 +6,4 @@ data/
 venv/
 *.db
 sync.sh
+healthcheck.py

@@ -7,7 +7,7 @@ import threading
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from app.config import SCAN_INTERVAL, DEBOUNCE_SECONDS, generate_uuid
+from app.config import SCAN_INTERVAL, DEBOUNCE_SECONDS, generate_uuid, EST
 from app.models import (
     toggle_presence, get_member_by_id, auto_checkout_stale,
     add_pending_tag, is_pending_tag, is_registered_member
@@ -76,7 +76,7 @@ def uid_to_string(uid: list) -> str:
 def handle_scan(tag_id: str) -> dict | None:
     global last_scan_times, last_scan_info
 
-    now = datetime.now()
+    now = datetime.now(EST)
 
     if now - last_scan_times[tag_id] < timedelta(seconds=DEBOUNCE_SECONDS):
         return None
@@ -134,7 +134,7 @@ def handle_scan(tag_id: str) -> dict | None:
 def handle_registration_scan(reader) -> dict | None:
     global last_scan_info
 
-    now = datetime.now()
+    now = datetime.now(EST)
 
     try:
         new_uuid = generate_uuid()
@@ -173,7 +173,7 @@ def scanner_loop_rfid():
         print("RFID Scanner started (RC522)")
         print("Waiting for RFID tags...")
 
-        last_auto_checkout = datetime.now()
+        last_auto_checkout = datetime.now(EST)
 
         while scanner_running:
             try:
@@ -190,11 +190,11 @@ def scanner_loop_rfid():
                         tag_id = text.strip() if text and text.strip() else format(id, 'x')
                         handle_scan(tag_id)
 
-                if datetime.now() - last_auto_checkout > timedelta(minutes=5):
+                if datetime.now(EST) - last_auto_checkout > timedelta(minutes=5):
                     stale_count = auto_checkout_stale()
                     if stale_count:
                         print(f"Auto-checked out {stale_count} stale members")
-                    last_auto_checkout = datetime.now()
+                    last_auto_checkout = datetime.now(EST)
 
                 time.sleep(SCAN_INTERVAL)
 
@@ -262,7 +262,7 @@ def simulate_scan(member_id: str) -> dict | None:
                 "tag_id": member_id,
                 "member_name": result["name"],
                 "action": result["action"],
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(EST).isoformat(),
                 "is_new_registration": False
             }
 
@@ -278,7 +278,7 @@ def simulate_registration() -> dict | None:
     new_uuid = generate_uuid()
     add_pending_tag(new_uuid)
 
-    now = datetime.now()
+    now = datetime.now(EST)
 
     with scan_info_lock:
         global last_scan_info

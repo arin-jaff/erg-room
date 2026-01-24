@@ -1,7 +1,14 @@
 import sqlite3
 from datetime import datetime, timedelta
 from contextlib import contextmanager
-from app.config import DB_PATH, AUTO_CHECKOUT_HOURS
+from app.config import DB_PATH, AUTO_CHECKOUT_HOURS, EST
+
+
+def _parse_ts(value: str) -> datetime:
+    dt = _parse_ts(value)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=EST)
+    return dt
 
 
 @contextmanager
@@ -216,7 +223,7 @@ def toggle_presence(member_id: str) -> dict | None:
 
         new_status = not row["is_present"]
         action = "in" if new_status else "out"
-        now = datetime.now()
+        now = datetime.now(EST)
 
         if new_status:
             cursor.execute("""
@@ -226,7 +233,7 @@ def toggle_presence(member_id: str) -> dict | None:
             """, (new_status, now, now, member_id))
         else:
             if row["checked_in_at"]:
-                checked_in = datetime.fromisoformat(row["checked_in_at"])
+                checked_in = _parse_ts(row["checked_in_at"])
                 session_seconds = int((now - checked_in).total_seconds())
                 cursor.execute("""
                     UPDATE members
@@ -268,13 +275,13 @@ def get_present_members() -> list[dict]:
         """)
 
         members = []
-        now = datetime.now()
+        now = datetime.now(EST)
 
         for row in cursor.fetchall():
             member = dict(row)
 
             if member["checked_in_at"]:
-                checked_in = datetime.fromisoformat(member["checked_in_at"])
+                checked_in = _parse_ts(member["checked_in_at"])
                 duration = now - checked_in
                 member["duration_seconds"] = duration.total_seconds()
                 member["duration_formatted"] = format_duration(duration)
@@ -317,7 +324,7 @@ def get_all_members() -> list[dict]:
 
 
 def auto_checkout_stale():
-    cutoff = datetime.now() - timedelta(hours=AUTO_CHECKOUT_HOURS)
+    cutoff = datetime.now(EST) - timedelta(hours=AUTO_CHECKOUT_HOURS)
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -327,7 +334,7 @@ def auto_checkout_stale():
         stale = cursor.fetchall()
 
         for row in stale:
-            checked_in = datetime.fromisoformat(row["checked_in_at"])
+            checked_in = _parse_ts(row["checked_in_at"])
             session_seconds = int((cutoff - checked_in).total_seconds())
             cursor.execute(
                 "UPDATE members SET total_seconds = total_seconds + ? WHERE id = ?",

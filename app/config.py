@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import hashlib
 import time
+from datetime import timezone, timedelta as td
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,6 +30,8 @@ MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 AUTO_CHECKOUT_HOURS = 5
+
+EST = timezone(td(hours=-5))
 
 
 def generate_uuid() -> str:
