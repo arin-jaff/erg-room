@@ -2,8 +2,11 @@ import os
 from pathlib import Path
 import hashlib
 import time
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 DATA_DIR = BASE_DIR / "data"
 UPLOAD_DIR = BASE_DIR / "static" / "uploads"
 DB_PATH = DATA_DIR / "presence.db"
@@ -16,8 +19,11 @@ DEBOUNCE_SECONDS = 3
 
 WEB_HOST = "0.0.0.0"
 WEB_PORT = 5000
-SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "REDACTED_PASSWORD")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+if not SECRET_KEY or not ADMIN_PASSWORD:
+    raise ValueError("SECRET_KEY and ADMIN_PASSWORD must be set in .env file")
 
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}

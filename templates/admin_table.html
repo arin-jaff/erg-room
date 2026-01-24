@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.table }} - Database Admin</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .table-container {
+            overflow-x: auto;
+            background: #fff;
+            border: 3px ridge #4499D9;
+            margin-bottom: 1rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
+            color: #fff;
+            padding: 0.5rem;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #2d6a99;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        .data-table tr:hover {
+            background: #e8f4fc;
+        }
+
+        .edit-btn {
+            background: #4499D9;
+            color: #fff;
+            border: 1px outset #5aaae6;
+            padding: 0.2rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .edit-btn:hover {
+            background: #5aaae6;
+        }
+
+        .table-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+
+        .table-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #4499D9;
+        }
+
+        .row-count {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .nav-links a {
+            color: #4499D9;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border: 3px ridge #4499D9;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #4499D9;
+        }
+
+        .modal-title {
+            font-weight: bold;
+            color: #4499D9;
+        }
+
+        .modal-close {
+            background: #a00;
+            color: #fff;
+            border: none;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px inset #ccc;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .form-group input:disabled {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Database: {{ data.table }}</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="nav-links">
+        <a href="/admin/device">Device Admin</a>
+        <a href="/admin">Main Admin</a>
+    </div>
+
+    {% if data.error %}
+    <div class="flash error">{{ data.error }}</div>
+    {% else %}
+
+    <div class="table-info">
+        <span class="table-name">{{ data.table }}</span>
+        <span class="row-count">{{ data.total }} rows (showing {{ data.rows|length }})</span>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Edit</th>
+                    {% for col in data.columns %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data.rows %}
+                <tr>
+                    <td>
+                        <button class="edit-btn" onclick="openEditModal({{ row|tojson|e }})">Edit</button>
+                    </td>
+                    {% for col in data.columns %}
+                    <td title="{{ row[col] }}">{{ row[col] }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% endif %}
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Edit Row</span>
+                <button class="modal-close" onclick="closeEditModal()">X</button>
+            </div>
+            <form id="editForm" method="POST" action="/admin/device/table/{{ data.table }}/update">
+                <input type="hidden" name="pk_value" id="pk_value">
+                <input type="hidden" name="pk_column" id="pk_column">
+                <div id="formFields"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <a href="/admin/device">Back to Device Admin</a>
+        <a href="/">Home</a>
+    </footer>
+
+    <script>
+        const columns = {{ data.columns|tojson }};
+        const tableName = "{{ data.table }}";
+
+        const pkMap = {
+            'members': 'id',
+            'presence': 'member_id',
+            'pending_tags': 'id',
+            'settings': 'key',
+            'scan_log': 'id'
+        };
+
+        function openEditModal(row) {
+            const modal = document.getElementById('editModal');
+            const formFields = document.getElementById('formFields');
+            const pkColumn = pkMap[tableName] || 'id';
+
+            document.getElementById('pk_value').value = row[pkColumn];
+            document.getElementById('pk_column').value = pkColumn;
+
+            formFields.innerHTML = '';
+
+            columns.forEach(col => {
+                const isPk = col === pkColumn;
+                const group = document.createElement('div');
+                group.className = 'form-group';
+
+                const label = document.createElement('label');
+                label.textContent = col + (isPk ? ' (primary key)' : '');
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.name = col;
+                input.value = row[col] !== null ? row[col] : '';
+
+                if (isPk) {
+                    input.disabled = true;
+                }
+
+                group.appendChild(label);
+                group.appendChild(input);
+                formFields.appendChild(group);
+            });
+
+            modal.classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+    </script>
+</body>
+</html>

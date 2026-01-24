@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Erg Room</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .leaderboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .boat-race {
+            background: #fff;
+            border: 3px ridge #4499D9;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .race-title {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #4499D9;
+        }
+
+        .race-track {
+            position: relative;
+            height: 180px;
+            background: linear-gradient(to bottom,
+                #87CEEB 0%,
+                #4499D9 50%,
+                #2d6a99 100%);
+            border: 2px solid #333;
+            overflow: hidden;
+        }
+
+        .lane {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 60px;
+            border-bottom: 2px dashed rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .lane:nth-child(1) { top: 0; }
+        .lane:nth-child(2) { top: 60px; }
+        .lane:nth-child(3) { top: 120px; border-bottom: none; }
+
+        .boat {
+            position: absolute;
+            font-size: 2rem;
+            transition: left 1s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .boat-label {
+            background: rgba(255,255,255,0.9);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .boat-1v .boat-label { background: #FFD700; }
+        .boat-2v .boat-label { background: #C0C0C0; }
+        .boat-3v .boat-label { background: #CD7F32; color: #fff; }
+
+        .finish-line {
+            position: absolute;
+            right: 40px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #000 0px,
+                #000 10px,
+                #fff 10px,
+                #fff 20px
+            );
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 2px ridge #4499D9;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #4499D9;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .top-rowers {
+            background: #fff;
+            border: 3px ridge #4499D9;
+            padding: 1rem;
+        }
+
+        .top-rowers h2 {
+            margin: 0 0 1rem 0;
+            color: #4499D9;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .rower-row {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+            gap: 0.75rem;
+        }
+
+        .rower-row:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .rank-1 { background: #FFD700; border-radius: 50%; }
+        .rank-2 { background: #C0C0C0; border-radius: 50%; }
+        .rank-3 { background: #CD7F32; border-radius: 50%; color: #fff; }
+
+        .rower-photo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #4499D9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.8rem;
+            overflow: hidden;
+        }
+
+        .rower-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .rower-info {
+            flex: 1;
+        }
+
+        .rower-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .rower-tags {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .rower-hours {
+            font-weight: bold;
+            color: #4499D9;
+        }
+
+        .boat-class-tag {
+            display: inline-block;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-right: 0.25rem;
+        }
+
+        .tag-1V { background: #FFD700; }
+        .tag-2V { background: #C0C0C0; }
+        .tag-3V { background: #CD7F32; color: #fff; }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Erg Room Leaderboard</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
+    </header>
+
+    <div class="leaderboard-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Hours</h3>
+                <div class="stat-value">{{ "%.1f"|format(stats.total_seconds / 3600) }}</div>
+                <div class="stat-sub">across all rowers</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Members</h3>
+                <div class="stat-value">{{ stats.member_count }}</div>
+                <div class="stat-sub">registered</div>
+            </div>
+            <div class="stat-card">
+                <h3>1V Hours</h3>
+                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('1V', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <div class="stat-sub">{{ stats.boat_stats.get('1V', {}).get('member_count', 0) }} rowers</div>
+            </div>
+            <div class="stat-card">
+                <h3>2V Hours</h3>
+                <div class="stat-value">{{ "%.1f"|format((stats.boat_stats.get('2V', {}).get('total_seconds', 0)) / 3600) }}</div>
+                <div class="stat-sub">{{ stats.boat_stats.get('2V', {}).get('member_count', 0) }} rowers</div>
+            </div>
+        </div>
+
+        <div class="boat-race">
+            <div class="race-title">Boat Class Race</div>
+            <div class="race-track">
+                {% set max_hours = [
+                    stats.boat_stats.get('1V', {}).get('total_seconds', 0),
+                    stats.boat_stats.get('2V', {}).get('total_seconds', 0),
+                    stats.boat_stats.get('3V+', {}).get('total_seconds', 0)
+                ]|max or 1 %}
+
+                <div class="lane">
+                    <div class="boat boat-1v" style="left: {{ ((stats.boat_stats.get('1V', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
+                        <span class="boat-label">1V: {{ "%.1f"|format(stats.boat_stats.get('1V', {}).get('total_seconds', 0) / 3600) }}h</span>
+                    </div>
+                </div>
+                <div class="lane">
+                    <div class="boat boat-2v" style="left: {{ ((stats.boat_stats.get('2V', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
+                        <span class="boat-label">2V: {{ "%.1f"|format(stats.boat_stats.get('2V', {}).get('total_seconds', 0) / 3600) }}h</span>
+                    </div>
+                </div>
+                <div class="lane">
+                    <div class="boat boat-3v" style="left: {{ ((stats.boat_stats.get('3V+', {}).get('total_seconds', 0) / max_hours) * 70)|int }}%;">
+                        <span class="boat-label">3V+: {{ "%.1f"|format(stats.boat_stats.get('3V+', {}).get('total_seconds', 0) / 3600) }}h</span>
+                    </div>
+                </div>
+                <div class="finish-line"></div>
+            </div>
+        </div>
+
+        <div class="top-rowers">
+            <h2>Top 10 Rowers</h2>
+            {% if stats.top_individuals %}
+                {% for rower in stats.top_individuals %}
+                <div class="rower-row">
+                    <div class="rank {% if loop.index <= 3 %}rank-{{ loop.index }}{% endif %}">
+                        {{ loop.index }}
+                    </div>
+                    <div class="rower-photo">
+                        {% if rower.profile_picture %}
+                        <img src="/static/uploads/{{ rower.profile_picture }}" alt="{{ rower.name }}">
+                        {% else %}
+                        {{ rower.name[0] }}
+                        {% endif %}
+                    </div>
+                    <div class="rower-info">
+                        <div class="rower-name">{{ rower.name }}</div>
+                        <div class="rower-tags">
+                            {% if rower.boat_class %}
+                            <span class="boat-class-tag tag-{{ rower.boat_class|replace('+', '') }}">{{ rower.boat_class }}</span>
+                            {% endif %}
+                            {% if rower.rowing_category %}
+                            <span>{{ rower.rowing_category }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="rower-hours">{{ "%.1f"|format(rower.total_seconds / 3600) }}h</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">No hours logged yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <footer>
+        <a href="/">Home</a>
+        <a href="/admin">Admin</a>
+    </footer>
+</body>
+</html>

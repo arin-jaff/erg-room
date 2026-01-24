@@ -40,6 +40,14 @@
             <option value="W" {% if member.rowing_category == "W" %}selected{% endif %}>W (Women)</option>
         </select>
 
+        <label for="boat_class">Boat Class</label>
+        <select id="boat_class" name="boat_class">
+            <option value="">None</option>
+            <option value="1V" {% if member.boat_class == "1V" %}selected{% endif %}>1V</option>
+            <option value="2V" {% if member.boat_class == "2V" %}selected{% endif %}>2V</option>
+            <option value="3V+" {% if member.boat_class == "3V+" %}selected{% endif %}>3V+</option>
+        </select>
+
         <label for="uuid">UUID (Tag ID)</label>
         <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
         <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>

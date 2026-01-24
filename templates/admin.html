@@ -28,7 +28,7 @@
     <section>
         <h2>Register New Tags</h2>
         {% if registration_mode %}
-        <div class="reg-active">⚡ Registration Mode ON - Tap a tag</div>
+        <div class="reg-active">Registration Mode ON - Tap a tag</div>
         <form method="POST" action="/admin/register/stop">
             <button type="submit" class="btn-secondary">Stop Registration</button>
         </form>
@@ -47,7 +47,7 @@
         <h2>Lightweight Mode</h2>
         <p class="hint">When enabled, the home page will only show lightweights (LM category) and hide the filter controls.</p>
         {% if lightweight_mode %}
-        <div class="reg-active">🏋️ Lightweight Mode ON - Only showing LM</div>
+        <div class="reg-active">Lightweight Mode ON - Only showing LM</div>
         <form method="POST" action="/admin/lightweight_mode/disable">
             <button type="submit" class="btn-secondary">Disable Lightweight Mode</button>
         </form>
@@ -77,6 +77,12 @@
                 <option value="LM">LM (Lightweight)</option>
                 <option value="M">M (Heavyweight)</option>
                 <option value="W">W (Women)</option>
+            </select>
+            <select name="boat_class">
+                <option value="">Boat Class (Optional)</option>
+                <option value="1V">1V</option>
+                <option value="2V">2V</option>
+                <option value="3V+">3V+</option>
             </select>
             <button type="submit">Create</button>
             <form method="POST" action="/admin/pending/{{ tag.id }}/delete" style="display:inline">
@@ -117,6 +123,8 @@
 
     <footer>
         <a href="/">← Back</a>
+        <a href="/leaderboard">Leaderboard</a>
+        <a href="/admin/device">Device</a>
         <a href="/admin/logout">Sign out</a>
     </footer>
 
