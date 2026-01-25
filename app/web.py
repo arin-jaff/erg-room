@@ -55,6 +55,27 @@ def notify_clients(data: dict):
     pass
 
 
+def is_open_hours():
+    from datetime import datetime
+    hour = datetime.now().hour
+    return 6 <= hour < 22
+
+
+@app.before_request
+def check_open_hours():
+    open_paths = ['/static/', '/admin', '/closed']
+    path = request.path
+    if any(path.startswith(p) for p in open_paths):
+        return None
+    if not is_open_hours():
+        return render_template("closed.html"), 200
+
+
+@app.route("/closed")
+def closed_preview():
+    return render_template("closed.html")
+
+
 @app.route("/")
 def index():
     present = get_present_members()
