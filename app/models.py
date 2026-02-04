@@ -333,14 +333,6 @@ def auto_checkout_stale():
         """, (cutoff,))
         stale = cursor.fetchall()
 
-        for row in stale:
-            checked_in = datetime.fromisoformat(row["checked_in_at"])
-            session_seconds = int((cutoff - checked_in).total_seconds())
-            cursor.execute(
-                "UPDATE members SET total_seconds = total_seconds + ? WHERE id = ?",
-                (session_seconds, row["member_id"])
-            )
-
         cursor.execute("""
             UPDATE presence
             SET is_present = 0, checked_in_at = NULL
