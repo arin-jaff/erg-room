@@ -532,6 +532,123 @@ def format_uptime(seconds: float) -> str:
     return f"{minutes}m"
 
 
+def get_network_info() -> dict:
+    import subprocess
+    import platform
+    import socket
+
+    info = {'hostname': platform.node(), 'interfaces': []}
+
+    try:
+        info['local_ip'] = socket.gethostbyname(socket.gethostname())
+    except:
+        info['local_ip'] = 'Unknown'
+
+    is_linux = platform.system() == 'Linux'
+
+    # WiFi SSID
+    try:
+        if is_linux:
+            result = subprocess.run(['iwgetid', '-r'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                info['ssid'] = result.stdout.strip() or 'Not connected'
+        else:
+            result = subprocess.run(
+                ['/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport', '-I'],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                for line in result.stdout.split('\n'):
+                    if ' SSID:' in line:
+                        info['ssid'] = line.split(':', 1)[1].strip()
+    except:
+        info['ssid'] = 'Unknown'
+
+    # Signal strength and link quality (Linux/Pi)
+    if is_linux:
+        try:
+            result = subprocess.run(['iwconfig', 'wlan0'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                output = result.stdout
+                for line in output.split('\n'):
+                    if 'Bit Rate' in line:
+                        for part in line.split('  '):
+                            part = part.strip()
+                            if part.startswith('Bit Rate'):
+                                info['bit_rate'] = part.split('=')[1] if '=' in part else part.split(':')[1]
+                    if 'Link Quality' in line:
+                        for part in line.split('  '):
+                            part = part.strip()
+                            if part.startswith('Link Quality'):
+                                info['link_quality'] = part.split('=')[1].split(' ')[0]
+                            if part.startswith('Signal level'):
+                                info['signal_level'] = part.split('=')[1]
+        except:
+            pass
+
+        # Traffic stats
+        try:
+            with open('/sys/class/net/wlan0/statistics/rx_bytes') as f:
+                info['rx_bytes'] = format_bytes(int(f.read().strip()))
+            with open('/sys/class/net/wlan0/statistics/tx_bytes') as f:
+                info['tx_bytes'] = format_bytes(int(f.read().strip()))
+        except:
+            pass
+
+    # IP addresses per interface
+    try:
+        if is_linux:
+            result = subprocess.run(['ip', '-brief', 'addr'], capture_output=True, text=True, timeout=5)
+        else:
+            result = subprocess.run(['ifconfig'], capture_output=True, text=True, timeout=5)
+
+        if result.returncode == 0:
+            if is_linux:
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        info['interfaces'].append({
+                            'name': parts[0],
+                            'state': parts[1],
+                            'addresses': parts[2:]
+                        })
+            else:
+                current_iface = None
+                for line in result.stdout.split('\n'):
+                    if line and not line.startswith('\t') and not line.startswith(' '):
+                        current_iface = line.split(':')[0]
+                    elif current_iface and 'inet ' in line:
+                        addr = line.strip().split()[1]
+                        info['interfaces'].append({
+                            'name': current_iface,
+                            'state': 'UP',
+                            'addresses': [addr]
+                        })
+    except:
+        pass
+
+    # Internet connectivity check
+    try:
+        result = subprocess.run(['ping', '-c', '1', '-W', '2', '8.8.8.8'], capture_output=True, text=True, timeout=5)
+        info['internet'] = 'Connected' if result.returncode == 0 else 'No connection'
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if 'time=' in line:
+                    time_part = line.split('time=')[1].split()[0]
+                    info['ping_ms'] = time_part
+    except:
+        info['internet'] = 'Unknown'
+
+    return info
+
+
+@app.route("/admin/device/network")
+@admin_required
+def admin_network():
+    net_info = get_network_info()
+    return render_template("admin_network.html", net=net_info)
+
+
 @app.route("/fragment/present-list")
 def fragment_present_list():
     present = get_present_members()

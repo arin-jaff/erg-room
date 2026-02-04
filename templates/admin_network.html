@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Status - Erg Room</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .net-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .net-card {
+            background: #fff;
+            border: 2px ridge #4499D9;
+            padding: 1rem;
+        }
+
+        .net-card h3 {
+            color: #4499D9;
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.4rem;
+        }
+
+        .net-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .net-row:last-child {
+            border-bottom: none;
+        }
+
+        .net-label {
+            color: #666;
+            font-weight: bold;
+        }
+
+        .net-value {
+            color: #333;
+            text-align: right;
+        }
+
+        .status-ok { color: #2a7d2a; font-weight: bold; }
+        .status-bad { color: #a00; font-weight: bold; }
+
+        .iface-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .iface-table th {
+            background: linear-gradient(180deg, #4499D9 0%, #2d6a99 100%);
+            color: #fff;
+            padding: 0.4rem;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        .iface-table td {
+            padding: 0.4rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        @media (max-width: 600px) {
+            .net-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Network Status</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
+    </header>
+
+    <div class="net-grid">
+        <div class="net-card">
+            <h3>Connection</h3>
+            <div class="net-row">
+                <span class="net-label">WiFi Network</span>
+                <span class="net-value">{{ net.ssid or 'N/A' }}</span>
+            </div>
+            <div class="net-row">
+                <span class="net-label">Internet</span>
+                <span class="net-value {% if net.internet == 'Connected' %}status-ok{% else %}status-bad{% endif %}">
+                    {{ net.internet or 'Unknown' }}
+                </span>
+            </div>
+            {% if net.ping_ms %}
+            <div class="net-row">
+                <span class="net-label">Ping</span>
+                <span class="net-value">{{ net.ping_ms }} ms</span>
+            </div>
+            {% endif %}
+            <div class="net-row">
+                <span class="net-label">Hostname</span>
+                <span class="net-value">{{ net.hostname }}</span>
+            </div>
+            <div class="net-row">
+                <span class="net-label">Local IP</span>
+                <span class="net-value">{{ net.local_ip }}</span>
+            </div>
+        </div>
+
+        <div class="net-card">
+            <h3>WiFi Signal</h3>
+            {% if net.link_quality %}
+            <div class="net-row">
+                <span class="net-label">Link Quality</span>
+                <span class="net-value">{{ net.link_quality }}</span>
+            </div>
+            {% endif %}
+            {% if net.signal_level %}
+            <div class="net-row">
+                <span class="net-label">Signal Level</span>
+                <span class="net-value">{{ net.signal_level }}</span>
+            </div>
+            {% endif %}
+            {% if net.bit_rate %}
+            <div class="net-row">
+                <span class="net-label">Bit Rate</span>
+                <span class="net-value">{{ net.bit_rate }}</span>
+            </div>
+            {% endif %}
+            {% if net.rx_bytes %}
+            <div class="net-row">
+                <span class="net-label">Data Received</span>
+                <span class="net-value">{{ net.rx_bytes }}</span>
+            </div>
+            {% endif %}
+            {% if net.tx_bytes %}
+            <div class="net-row">
+                <span class="net-label">Data Sent</span>
+                <span class="net-value">{{ net.tx_bytes }}</span>
+            </div>
+            {% endif %}
+            {% if not net.link_quality and not net.signal_level and not net.bit_rate %}
+            <div class="net-row">
+                <span class="net-label">Details</span>
+                <span class="net-value">Available on Pi only</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if net.interfaces %}
+    <div class="net-card">
+        <h3>Network Interfaces</h3>
+        <table class="iface-table">
+            <thead>
+                <tr>
+                    <th>Interface</th>
+                    <th>State</th>
+                    <th>Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for iface in net.interfaces %}
+                <tr>
+                    <td>{{ iface.name }}</td>
+                    <td>{{ iface.state }}</td>
+                    <td>{{ iface.addresses|join(', ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <footer>
+        <a href="/admin/device">Device Admin</a>
+        <a href="/admin">Main Admin</a>
+    </footer>
+</body>
+</html>
