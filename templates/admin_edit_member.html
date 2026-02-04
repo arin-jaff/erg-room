@@ -48,6 +48,10 @@
             <option value="3V+" {% if member.boat_class == "3V+" %}selected{% endif %}>3V+</option>
         </select>
 
+        <label for="passkey">Passkey (Optional)</label>
+        <input type="text" id="passkey" name="passkey" value="{{ member.passkey or '' }}" placeholder="Custom login passkey">
+        <p class="hint">Allows member to login with passkey instead of card ID</p>
+
         <label for="uuid">UUID (Tag ID)</label>
         <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
         <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>

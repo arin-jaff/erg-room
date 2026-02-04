@@ -62,6 +62,22 @@
     </form>
     <p class="hint">PNG, JPG, GIF, WebP (max 5MB)</p>
 
+    {% if member.is_present %}
+    <h2>Virtual Checkout</h2>
+    <form method="POST" action="/profile/checkout">
+        <button type="submit" class="btn-secondary">Check Out</button>
+    </form>
+    <p class="hint">Use this to check out without scanning your card</p>
+    {% endif %}
+
+    <h2>Custom Passkey</h2>
+    <form method="POST" action="/profile/passkey">
+        <label>Passkey (optional)</label>
+        <input type="text" name="passkey" placeholder="Enter a custom passkey" value="{{ member.passkey or '' }}" minlength="4">
+        <button type="submit">{% if member.passkey %}Update Passkey{% else %}Set Passkey{% endif %}</button>
+    </form>
+    <p class="hint">Set a passkey to login without your card ID (min 4 characters)</p>
+
     <footer>
         <a href="/">← Back</a>
         <a href="/logout">Sign out</a>

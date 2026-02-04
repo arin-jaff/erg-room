@@ -8,11 +8,11 @@ from app.config import (
 )
 from app.models import (
     get_present_members, get_all_members, init_db,
-    get_member_by_id, update_profile_picture, get_member_presence,
+    get_member_by_id, get_member_by_id_or_passkey, update_profile_picture, get_member_presence,
     get_pending_tags, create_member, delete_member, update_member,
     update_member_uuid, remove_pending_tag, set_lightweight_mode,
     get_lightweight_mode, get_leaderboard_stats, get_all_tables,
-    get_table_data, update_table_row, auto_checkout_stale
+    get_table_data, update_table_row, auto_checkout_stale, toggle_presence
 )
 from app.rfid_scanner import (
     start_scanner, stop_scanner, simulate_scan, set_presence_callback,
@@ -111,15 +111,15 @@ def api_lightweight_mode():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        member_id = request.form.get("member_id", "").strip()
+        identifier = request.form.get("member_id", "").strip()
 
-        member = get_member_by_id(member_id)
+        member = get_member_by_id_or_passkey(identifier)
         if member:
-            session["member_id"] = member_id
+            session["member_id"] = member["id"]
             session["member_name"] = member["name"]
             return redirect(url_for("profile"))
         else:
-            flash("Invalid ID. Please try again.", "error")
+            flash("Invalid ID or passkey. Please try again.", "error")
 
     return render_template("login.html")
 
@@ -158,6 +158,38 @@ def update_profile():
 
     update_member(session["member_id"], rowing_category=rowing_category)
     flash("Category updated!", "success")
+
+    return redirect(url_for("profile"))
+
+
+@app.route("/profile/checkout", methods=["POST"])
+def virtual_checkout():
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+
+    member = get_member_presence(session["member_id"])
+    if member and member["is_present"]:
+        toggle_presence(session["member_id"], new_status=False)
+        flash("You've been checked out!", "success")
+    else:
+        flash("You're not currently checked in", "error")
+
+    return redirect(url_for("profile"))
+
+
+@app.route("/profile/passkey", methods=["POST"])
+def update_passkey():
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+
+    passkey = request.form.get("passkey", "").strip()
+
+    if passkey and len(passkey) < 4:
+        flash("Passkey must be at least 4 characters", "error")
+        return redirect(url_for("profile"))
+
+    update_member(session["member_id"], passkey=passkey if passkey else None)
+    flash("Passkey updated!" if passkey else "Passkey removed!", "success")
 
     return redirect(url_for("profile"))
 
@@ -301,10 +333,11 @@ def admin_edit_member(member_id):
         name = request.form.get("name", "").strip()
         rowing_category = request.form.get("rowing_category", "").strip()
         boat_class_raw = request.form.get("boat_class", "").strip()
+        passkey = request.form.get("passkey", "").strip()
         new_uuid = request.form.get("uuid", "").strip()
 
         if name and rowing_category:
-            update_member(member_id, name=name, rowing_category=rowing_category, boat_class=boat_class_raw or None)
+            update_member(member_id, name=name, rowing_category=rowing_category, boat_class=boat_class_raw or None, passkey=passkey or None)
 
         if new_uuid and new_uuid != member_id:
             if update_member_uuid(member_id, new_uuid):

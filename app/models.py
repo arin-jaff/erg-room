@@ -77,6 +77,9 @@ def migrate_db(conn):
     if 'total_seconds' not in columns:
         cursor.execute("ALTER TABLE members ADD COLUMN total_seconds INTEGER DEFAULT 0")
 
+    if 'passkey' not in columns:
+        cursor.execute("ALTER TABLE members ADD COLUMN passkey TEXT DEFAULT NULL")
+
 
 def repair_presence(conn):
     cursor = conn.cursor()
@@ -141,7 +144,7 @@ def create_member(member_id: str, name: str, rowing_category: str = None, boat_c
 _UNSET = object()
 
 
-def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class=_UNSET) -> bool:
+def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class=_UNSET, passkey=_UNSET) -> bool:
     with get_db() as conn:
         cursor = conn.cursor()
 
@@ -163,6 +166,10 @@ def update_member(member_id: str, name: str = None, profile_picture: str = None,
         if boat_class is not _UNSET:
             updates.append("boat_class = ?")
             params.append(boat_class)
+
+        if passkey is not _UNSET:
+            updates.append("passkey = ?")
+            params.append(passkey)
 
         if not updates:
             return False
@@ -347,8 +354,19 @@ def get_member_by_id(member_id: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds FROM members WHERE id = ?",
+            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey FROM members WHERE id = ?",
             (member_id,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def get_member_by_id_or_passkey(identifier: str) -> dict | None:
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey FROM members WHERE id = ? OR passkey = ?",
+            (identifier, identifier)
         )
         row = cursor.fetchone()
         return dict(row) if row else None
