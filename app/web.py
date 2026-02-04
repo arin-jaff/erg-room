@@ -169,7 +169,7 @@ def virtual_checkout():
 
     member = get_member_presence(session["member_id"])
     if member and member["is_present"]:
-        toggle_presence(session["member_id"], new_status=False)
+        toggle_presence(session["member_id"])
         flash("You've been checked out!", "success")
     else:
         flash("You're not currently checked in", "error")
