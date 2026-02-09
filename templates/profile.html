@@ -34,13 +34,13 @@
 
     <p style="text-align:center">
         <strong>{{ member.name }}</strong><br>
+        {% if member.username %}<code>@{{ member.username }}</code><br>{% endif %}
         {% if member.rowing_category %}
         <span class="rowing-category-tag">{{ member.rowing_category }}</span>
         {% endif %}<br>
         <span class="status {% if member.is_present %}in{% endif %}">
             {% if member.is_present %}IN{% else %}OUT{% endif %}
-        </span><br>
-        <code>{{ member.id }}</code>
+        </span>
     </p>
 
     <h2>Update Category</h2>
@@ -70,13 +70,16 @@
     <p class="hint">Use this to check out without scanning your card</p>
     {% endif %}
 
-    <h2>Custom Passkey</h2>
-    <form method="POST" action="/profile/passkey">
-        <label>Passkey (optional)</label>
-        <input type="text" name="passkey" placeholder="Enter a custom passkey" value="{{ member.passkey or '' }}" minlength="4">
-        <button type="submit">{% if member.passkey %}Update Passkey{% else %}Set Passkey{% endif %}</button>
+    {% if member.password_hash %}
+    <h2>Change Password</h2>
+    <form method="POST" action="/profile/password">
+        <label>New Password</label>
+        <input type="password" name="password" placeholder="New password" minlength="4" required>
+        <label>Confirm Password</label>
+        <input type="password" name="confirm_password" placeholder="Confirm new password" minlength="4" required>
+        <button type="submit">Change Password</button>
     </form>
-    <p class="hint">Set a passkey to login without your card ID (min 4 characters)</p>
+    {% endif %}
 
     <footer>
         <a href="/">← Back</a>

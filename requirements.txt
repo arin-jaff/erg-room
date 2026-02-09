@@ -8,3 +8,4 @@ pillow>=10.2.0  # 10.2+ for Python 3.13
 numpy>=1.24.0
 qrcode[pil]>=7.4.2
 python-dotenv>=1.0.0
+pyotp>=2.9.0

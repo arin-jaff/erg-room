@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from contextlib import contextmanager
+from hashlib import sha256
 from app.config import DB_PATH, AUTO_CHECKOUT_HOURS
 
 
@@ -80,6 +81,12 @@ def migrate_db(conn):
     if 'passkey' not in columns:
         cursor.execute("ALTER TABLE members ADD COLUMN passkey TEXT DEFAULT NULL")
 
+    if 'username' not in columns:
+        cursor.execute("ALTER TABLE members ADD COLUMN username TEXT DEFAULT NULL")
+
+    if 'password_hash' not in columns:
+        cursor.execute("ALTER TABLE members ADD COLUMN password_hash TEXT DEFAULT NULL")
+
 
 def repair_presence(conn):
     cursor = conn.cursor()
@@ -91,6 +98,25 @@ def repair_presence(conn):
     repaired = cursor.rowcount
     if repaired > 0:
         print(f"Repaired {repaired} members missing presence records")
+
+
+def hash_password(password: str) -> str:
+    return sha256(password.encode()).hexdigest()
+
+
+def check_password(password: str, password_hash: str) -> bool:
+    return sha256(password.encode()).hexdigest() == password_hash
+
+
+def get_member_by_username(username: str) -> dict | None:
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey, username, password_hash FROM members WHERE username = ?",
+            (username,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
 
 
 def add_pending_tag(tag_id: str) -> bool:
@@ -144,7 +170,7 @@ def create_member(member_id: str, name: str, rowing_category: str = None, boat_c
 _UNSET = object()
 
 
-def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class=_UNSET, passkey=_UNSET) -> bool:
+def update_member(member_id: str, name: str = None, profile_picture: str = None, rowing_category: str = None, boat_class=_UNSET, passkey=_UNSET, username=_UNSET, password_hash=_UNSET) -> bool:
     with get_db() as conn:
         cursor = conn.cursor()
 
@@ -170,6 +196,14 @@ def update_member(member_id: str, name: str = None, profile_picture: str = None,
         if passkey is not _UNSET:
             updates.append("passkey = ?")
             params.append(passkey)
+
+        if username is not _UNSET:
+            updates.append("username = ?")
+            params.append(username)
+
+        if password_hash is not _UNSET:
+            updates.append("password_hash = ?")
+            params.append(password_hash)
 
         if not updates:
             return False
@@ -346,7 +380,7 @@ def get_member_by_id(member_id: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey FROM members WHERE id = ?",
+            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey, username, password_hash FROM members WHERE id = ?",
             (member_id,)
         )
         row = cursor.fetchone()
@@ -357,7 +391,7 @@ def get_member_by_id_or_passkey(identifier: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey FROM members WHERE id = ? OR passkey = ?",
+            "SELECT id, name, profile_picture, rowing_category, boat_class, total_seconds, passkey, username, password_hash FROM members WHERE id = ? OR passkey = ?",
             (identifier, identifier)
         )
         row = cursor.fetchone()
@@ -379,7 +413,7 @@ def get_member_presence(member_id: str) -> dict | None:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT m.id, m.name, m.profile_picture, m.rowing_category, p.is_present, p.last_scan, p.checked_in_at
+            SELECT m.id, m.name, m.profile_picture, m.rowing_category, m.passkey, m.username, m.password_hash, p.is_present, p.last_scan, p.checked_in_at
             FROM members m
             JOIN presence p ON m.id = p.member_id
             WHERE m.id = ?

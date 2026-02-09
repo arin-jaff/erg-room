@@ -52,6 +52,13 @@
         <input type="text" id="passkey" name="passkey" value="{{ member.passkey or '' }}" placeholder="Custom login passkey">
         <p class="hint">Allows member to login with passkey instead of card ID</p>
 
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" value="{{ member.username or '' }}" placeholder="No username set">
+        <p class="hint">{% if member.password_hash %}Account is set up{% else %}No account yet - user must sign in with card ID first{% endif %}</p>
+
+        <label for="new_password">Reset Password (leave blank to keep current)</label>
+        <input type="password" id="new_password" name="new_password" placeholder="Enter new password">
+
         <label for="uuid">UUID (Tag ID)</label>
         <input type="text" id="uuid" name="uuid" value="{{ member.id }}">
         <p class="hint">⚠️ Changing UUID requires re-registering the tag</p>

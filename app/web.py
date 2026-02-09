@@ -4,15 +4,17 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from werkzeug.utils import secure_filename
 from app.config import (
     SECRET_KEY, WEB_HOST, WEB_PORT, UPLOAD_DIR,
-    MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS, ADMIN_PASSWORD
+    MAX_CONTENT_LENGTH, ALLOWED_EXTENSIONS, ADMIN_PASSWORD, ADMIN_TOTP_SECRET
 )
 from app.models import (
     get_present_members, get_all_members, init_db,
-    get_member_by_id, get_member_by_id_or_passkey, update_profile_picture, get_member_presence,
+    get_member_by_id, get_member_by_id_or_passkey, get_member_by_username,
+    update_profile_picture, get_member_presence,
     get_pending_tags, create_member, delete_member, update_member,
     update_member_uuid, remove_pending_tag, set_lightweight_mode,
     get_lightweight_mode, get_leaderboard_stats, get_all_tables,
-    get_table_data, update_table_row, auto_checkout_stale, toggle_presence
+    get_table_data, update_table_row, auto_checkout_stale, toggle_presence,
+    hash_password, check_password
 )
 from app.rfid_scanner import (
     start_scanner, stop_scanner, simulate_scan, set_presence_callback,
@@ -111,17 +113,71 @@ def api_lightweight_mode():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        identifier = request.form.get("member_id", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        card_id = request.form.get("member_id", "").strip()
 
-        member = get_member_by_id_or_passkey(identifier)
-        if member:
-            session["member_id"] = member["id"]
-            session["member_name"] = member["name"]
-            return redirect(url_for("profile"))
+        # Username/password login (primary)
+        if username and password:
+            member = get_member_by_username(username)
+            if member and member["password_hash"] and check_password(password, member["password_hash"]):
+                session["member_id"] = member["id"]
+                session["member_name"] = member["name"]
+                return redirect(url_for("profile"))
+            else:
+                flash("Invalid username or password.", "error")
+        # Card ID / passkey login (fallback for first-time setup)
+        elif card_id:
+            member = get_member_by_id_or_passkey(card_id)
+            if member:
+                session["member_id"] = member["id"]
+                session["member_name"] = member["name"]
+                if not member["password_hash"]:
+                    return redirect(url_for("setup_account"))
+                return redirect(url_for("profile"))
+            else:
+                flash("Invalid card ID or passkey.", "error")
         else:
-            flash("Invalid ID or passkey. Please try again.", "error")
+            flash("Please enter your credentials.", "error")
 
     return render_template("login.html")
+
+
+@app.route("/setup", methods=["GET", "POST"])
+def setup_account():
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+
+    member = get_member_by_id(session["member_id"])
+    if not member:
+        return redirect(url_for("login"))
+
+    if member["password_hash"]:
+        return redirect(url_for("profile"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        confirm = request.form.get("confirm_password", "").strip()
+
+        if not username or not password:
+            flash("Username and password are required.", "error")
+        elif len(username) < 3:
+            flash("Username must be at least 3 characters.", "error")
+        elif len(password) < 4:
+            flash("Password must be at least 4 characters.", "error")
+        elif password != confirm:
+            flash("Passwords do not match.", "error")
+        else:
+            existing = get_member_by_username(username)
+            if existing and existing["id"] != member["id"]:
+                flash("Username already taken.", "error")
+            else:
+                update_member(member["id"], username=username, password_hash=hash_password(password))
+                flash("Account created! You can now sign in with your username and password.", "success")
+                return redirect(url_for("profile"))
+
+    return render_template("setup_account.html", member=member)
 
 
 @app.route("/logout")
@@ -194,6 +250,25 @@ def update_passkey():
     return redirect(url_for("profile"))
 
 
+@app.route("/profile/password", methods=["POST"])
+def change_password():
+    if "member_id" not in session:
+        return redirect(url_for("login"))
+
+    password = request.form.get("password", "").strip()
+    confirm = request.form.get("confirm_password", "").strip()
+
+    if not password or len(password) < 4:
+        flash("Password must be at least 4 characters", "error")
+    elif password != confirm:
+        flash("Passwords do not match", "error")
+    else:
+        update_member(session["member_id"], password_hash=hash_password(password))
+        flash("Password updated!", "success")
+
+    return redirect(url_for("profile"))
+
+
 @app.route("/profile/upload", methods=["POST"])
 def upload_photo():
     if "member_id" not in session:
@@ -230,18 +305,49 @@ def upload_photo():
     return redirect(url_for("profile"))
 
 
+_admin_attempts = {}
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
+    import time
+    ip = request.remote_addr
+
     if request.method == "POST":
+        # Rate limiting: max 5 attempts per 15 minutes
+        now = time.time()
+        attempts = _admin_attempts.get(ip, [])
+        attempts = [t for t in attempts if now - t < 900]
+        _admin_attempts[ip] = attempts
+
+        if len(attempts) >= 5:
+            flash("Too many attempts. Try again later.", "error")
+            return render_template("admin_login.html")
+
         password = request.form.get("password", "")
+        totp_code = request.form.get("totp_code", "").strip()
 
-        if password == ADMIN_PASSWORD:
-            session["is_admin"] = True
-            return redirect(url_for("admin"))
-        else:
+        import hmac
+        if not hmac.compare_digest(password, ADMIN_PASSWORD):
+            attempts.append(now)
+            _admin_attempts[ip] = attempts
             flash("Invalid password", "error")
+        elif ADMIN_TOTP_SECRET:
+            import pyotp
+            totp = pyotp.TOTP(ADMIN_TOTP_SECRET)
+            if totp.verify(totp_code, valid_window=1):
+                session["is_admin"] = True
+                _admin_attempts.pop(ip, None)
+                return redirect(url_for("admin"))
+            else:
+                attempts.append(now)
+                _admin_attempts[ip] = attempts
+                flash("Invalid 2FA code", "error")
+        else:
+            session["is_admin"] = True
+            _admin_attempts.pop(ip, None)
+            return redirect(url_for("admin"))
 
-    return render_template("admin_login.html")
+    return render_template("admin_login.html", totp_enabled=bool(ADMIN_TOTP_SECRET))
 
 
 @app.route("/admin/logout")
@@ -334,10 +440,26 @@ def admin_edit_member(member_id):
         rowing_category = request.form.get("rowing_category", "").strip()
         boat_class_raw = request.form.get("boat_class", "").strip()
         passkey = request.form.get("passkey", "").strip()
+        username = request.form.get("username", "").strip()
+        new_password = request.form.get("new_password", "").strip()
         new_uuid = request.form.get("uuid", "").strip()
 
+        kwargs = dict(name=name, rowing_category=rowing_category, boat_class=boat_class_raw or None, passkey=passkey or None)
+
+        if username:
+            existing = get_member_by_username(username)
+            if existing and existing["id"] != member_id:
+                flash("Username already taken.", "error")
+                return redirect(url_for("admin_edit_member", member_id=member_id))
+            kwargs["username"] = username
+        else:
+            kwargs["username"] = None
+
+        if new_password:
+            kwargs["password_hash"] = hash_password(new_password)
+
         if name and rowing_category:
-            update_member(member_id, name=name, rowing_category=rowing_category, boat_class=boat_class_raw or None, passkey=passkey or None)
+            update_member(member_id, **kwargs)
 
         if new_uuid and new_uuid != member_id:
             if update_member_uuid(member_id, new_uuid):
@@ -397,8 +519,20 @@ def member_profile(member_id):
     return render_template("member_profile.html", member=member)
 
 
-@app.route("/leaderboard")
+LEADERBOARD_PASSWORD = "c150-2026"
+
+@app.route("/leaderboard", methods=["GET", "POST"])
 def leaderboard():
+    if request.method == "POST":
+        if request.form.get("password", "") == LEADERBOARD_PASSWORD:
+            session["leaderboard_ok"] = True
+        else:
+            flash("Invalid password", "error")
+        return redirect(url_for("leaderboard"))
+
+    if not session.get("leaderboard_ok") and not session.get("is_admin"):
+        return render_template("leaderboard_login.html")
+
     stats = get_leaderboard_stats()
     return render_template("leaderboard.html", stats=stats)
 

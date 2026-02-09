@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Erg Room</title>
+    <title>Leaderboard - Erg Room</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <header>
-        <h1>Admin Login</h1>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Leaderboard</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
     </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -21,13 +25,9 @@
     {% endwith %}
 
     <form method="POST">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required autofocus>
-        {% if totp_enabled %}
-        <label for="totp_code">Authenticator Code</label>
-        <input type="text" id="totp_code" name="totp_code" placeholder="6-digit code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="off">
-        {% endif %}
-        <button type="submit">Sign In</button>
+        <label for="password">Enter password to view leaderboard</label>
+        <input type="password" id="password" name="password" placeholder="Password" required autofocus>
+        <button type="submit">Enter</button>
     </form>
 
     <footer>

@@ -21,6 +21,7 @@ WEB_HOST = "0.0.0.0"
 WEB_PORT = 5000
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+ADMIN_TOTP_SECRET = os.environ.get("ADMIN_TOTP_SECRET")
 
 if not SECRET_KEY or not ADMIN_PASSWORD:
     raise ValueError("SECRET_KEY and ADMIN_PASSWORD must be set in .env file")
