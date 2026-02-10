@@ -507,6 +507,12 @@ def api_simulate(member_id: str):
 
 @app.route("/tap")
 def tap_landing():
+    saved_id = request.cookies.get("tap_member_id")
+    if saved_id:
+        member = get_member_by_id(saved_id)
+        if member:
+            toggle_presence(saved_id)
+            return redirect(url_for("index"))
     return render_template("tap.html")
 
 
@@ -526,7 +532,16 @@ def tap_checkout():
 @app.route("/tap/toggle/<member_id>", methods=["POST"])
 def tap_toggle(member_id):
     toggle_presence(member_id)
-    return redirect(url_for("index"))
+    resp = redirect(url_for("index"))
+    resp.set_cookie("tap_member_id", member_id, max_age=365*24*3600, samesite="Lax")
+    return resp
+
+
+@app.route("/tap/reset")
+def tap_reset():
+    resp = redirect(url_for("profile") if "member_id" in session else url_for("tap_landing"))
+    resp.delete_cookie("tap_member_id")
+    return resp
 
 
 @app.route("/members")
