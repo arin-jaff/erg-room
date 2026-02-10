@@ -525,11 +525,8 @@ def tap_checkout():
 
 @app.route("/tap/toggle/<member_id>", methods=["POST"])
 def tap_toggle(member_id):
-    result = toggle_presence(member_id)
-    if result:
-        action = "in" if result["is_present"] else "out"
-        return redirect(url_for("tap_checkout") if action == "in" else url_for("tap_checkin"))
-    return redirect(url_for("tap_landing"))
+    toggle_presence(member_id)
+    return redirect(url_for("index"))
 
 
 @app.route("/members")
