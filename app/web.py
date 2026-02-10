@@ -505,6 +505,33 @@ def api_simulate(member_id: str):
     return jsonify({"success": False, "error": "Member not found"}), 404
 
 
+@app.route("/tap")
+def tap_landing():
+    return render_template("tap.html")
+
+
+@app.route("/tap/in")
+def tap_checkin():
+    members = get_all_members()
+    out_members = [m for m in members if not m.get("is_present")]
+    return render_template("tap_list.html", members=out_members, action="in")
+
+
+@app.route("/tap/out")
+def tap_checkout():
+    present = get_present_members()
+    return render_template("tap_list.html", members=present, action="out")
+
+
+@app.route("/tap/toggle/<member_id>", methods=["POST"])
+def tap_toggle(member_id):
+    result = toggle_presence(member_id)
+    if result:
+        action = "in" if result["is_present"] else "out"
+        return redirect(url_for("tap_checkout") if action == "in" else url_for("tap_checkin"))
+    return redirect(url_for("tap_landing"))
+
+
 @app.route("/members")
 def members_directory():
     members = get_all_members()

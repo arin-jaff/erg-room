@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if action == 'in' %}Check In{% else %}Check Out{% endif %} - Erg Room</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .tap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        .tap-card {
+            background: #fff;
+            border: 2px solid #4499D9;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+        }
+        .tap-card:active { background: #e8f4fc; }
+        .tap-card .photo {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 0.5rem;
+            background: #4499D9;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        .tap-card .photo img { width: 100%; height: 100%; object-fit: cover; }
+        .tap-card .name { font-size: 0.85rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>{% if action == 'in' %}Check In{% else %}Check Out{% endif %}</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
+    </header>
+
+    <p style="text-align:center" class="hint">Tap your name to {% if action == 'in' %}check in{% else %}check out{% endif %}</p>
+
+    {% if members %}
+    <div class="tap-grid">
+        {% for m in members %}
+        <form method="POST" action="/tap/toggle/{{ m.id }}" style="margin:0">
+            <button type="submit" class="tap-card">
+                <div class="photo">
+                    {% if m.profile_picture %}
+                    <img src="/static/uploads/{{ m.profile_picture }}" alt="{{ m.name }}">
+                    {% else %}
+                    {{ m.name[0] }}
+                    {% endif %}
+                </div>
+                <div class="name">{{ m.name }}</div>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center">No one to {% if action == 'in' %}check in{% else %}check out{% endif %}.</p>
+    {% endif %}
+
+    <footer>
+        <a href="/tap">← Back</a>
+    </footer>
+</body>
+</html>

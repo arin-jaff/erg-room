@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap - Erg Room</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .tap-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 300px;
+            margin: 2rem auto;
+        }
+        .tap-btn {
+            display: block;
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-decoration: none;
+            border: 3px ridge #4499D9;
+            color: #fff;
+        }
+        .tap-btn.in { background: #2a7d2a; }
+        .tap-btn.out { background: #a00; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion left">
+            <h1>Erg Room</h1>
+            <img src="/static/c150lion1.png" alt="C150 Lion" class="header-lion right">
+        </div>
+    </header>
+    <div class="tap-buttons">
+        <a href="/tap/in" class="tap-btn in">Check In</a>
+        <a href="/tap/out" class="tap-btn out">Check Out</a>
+    </div>
+</body>
+</html>
