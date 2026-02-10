@@ -203,6 +203,25 @@
             50% { box-shadow: 0 0 20px rgba(170, 0, 0, 0.6); }
         }
 
+        /* Sparkle flair */
+        .member-item.sparkle {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,255,255,0), rgba(255,215,0,0.08));
+            background-size: 200% 200%;
+            animation: shimmer 3s ease infinite;
+        }
+        .member-item.sparkle .member-name {
+            background: linear-gradient(90deg, #4499D9, #d4af37, #4499D9);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease infinite;
+        }
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
         /* Member list animations */
         .member-grid {
             transition: all 0.3s ease;
